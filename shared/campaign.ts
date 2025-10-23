@@ -1,4 +1,4 @@
-import { Campaign } from './types';
+import { Campaign } from './types.js';
 
 export const campaignData: Campaign = {
   id: 'emberfall-ascent',
