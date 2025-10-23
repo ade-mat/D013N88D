@@ -2,6 +2,12 @@ import { useMemo } from 'react';
 import { useGame } from '@/context/GameContext';
 import type { SceneChoice, SceneNode } from '@/types';
 
+type AugmentedChoice = SceneChoice & {
+  isHidden: boolean;
+  isEnabled: boolean;
+  requiresSatisfied: boolean;
+};
+
 interface SceneViewProps {
   scene: SceneNode;
 }
@@ -9,18 +15,18 @@ interface SceneViewProps {
 const SceneView = ({ scene }: SceneViewProps) => {
   const { hero, chooseOption, lastRoll } = useGame();
 
-  const options = useMemo(() => {
-    if (!hero) {
-      return scene.options;
-    }
+  const options = useMemo<AugmentedChoice[]>(() => {
     return scene.options.map((option) => {
       const requiresSatisfied =
-        !option.requiresFlag || hero.flags[option.requiresFlag] === true;
-      const hidden = option.hideIfFlag && hero.flags[option.hideIfFlag] === true;
+        !option.requiresFlag || (hero ? hero.flags[option.requiresFlag] === true : true);
+      const hidden =
+        option.hideIfFlag && hero ? hero.flags[option.hideIfFlag] === true : false;
+
+      const isEnabled = hero ? requiresSatisfied && !hidden : true;
       return {
         ...option,
         isHidden: hidden,
-        isEnabled: requiresSatisfied && !hidden,
+        isEnabled,
         requiresSatisfied
       };
     });
