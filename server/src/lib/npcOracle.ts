@@ -1,31 +1,26 @@
-import type { Metric } from '../../../shared/types.js';
-
 interface HeroSnapshot {
   name: string;
-  metrics: Record<Metric, number>;
+  status: Record<string, number>;
   flags: Record<string, boolean>;
+  resources: { hitPoints: number; tempHitPoints?: number; inspiration?: number };
 }
-
-const metricMentions: Record<Metric, string> = {
-  stress: 'stress',
-  wounds: 'wounds',
-  influence: 'influence',
-  corruption: 'corruption'
-};
 
 const describeState = (hero: HeroSnapshot): string => {
   const tensions: string[] = [];
-  if (hero.metrics.stress >= 4) {
+  if ((hero.status.stress ?? 0) >= 4) {
     tensions.push('your nerves are fraying');
   }
-  if (hero.metrics.wounds >= 3) {
+  if ((hero.status.wounds ?? 0) >= 3) {
     tensions.push('your wounds need mending');
   }
-  if (hero.metrics.corruption >= 3) {
+  if ((hero.status.corruption ?? 0) >= 3) {
     tensions.push('the Heart’s corruption clings to you');
   }
-  if (hero.metrics.influence >= 3) {
+  if ((hero.status.influence ?? 0) >= 3) {
     tensions.push('Emberfall watches and trusts you');
+  }
+  if (hero.resources.hitPoints <= 6) {
+    tensions.push('your injuries need attention');
   }
   return tensions.length > 0 ? tensions.join(', ') : 'you remain balanced for now';
 };
@@ -36,7 +31,7 @@ const seraphineReply = (prompt: string, hero: HeroSnapshot) => {
       ? 'The threads you have already seen are aligning.'
       : 'The threads tremble, awaiting your choice.';
   return `I cast your words into the lantern. ${insight} ${
-    hero.metrics.corruption > 2
+    (hero.status.corruption ?? 0) > 2
       ? 'Guard your spirit; the Heart hungers for you.'
       : 'Hold fast to compassion; it will steady the Heart.'
   }`;
@@ -56,7 +51,7 @@ const marekReply = (prompt: string, hero: HeroSnapshot) => {
   const respect = hero.flags.marek_support || hero.flags.marek_respects;
   const tone = respect ? 'You have my trust.' : 'I still have reservations, but Emberfall needs results.';
   return `${tone} ${
-    hero.metrics.influence > 2
+    (hero.status.influence ?? 0) > 2
       ? 'Citizens speak of your deeds. Use that goodwill.'
       : 'Keep a low profile until you secure the Heart.'
   }`;

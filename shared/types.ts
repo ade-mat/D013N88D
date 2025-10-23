@@ -1,26 +1,109 @@
-export type Attribute = 'might' | 'finesse' | 'insight' | 'resolve';
+export type Ability =
+  | 'strength'
+  | 'dexterity'
+  | 'constitution'
+  | 'intelligence'
+  | 'wisdom'
+  | 'charisma';
 
-export type Metric = 'stress' | 'wounds' | 'influence' | 'corruption';
+export type CoreResource = 'hitPoints' | 'tempHitPoints' | 'inspiration';
 
-export interface HeroArchetype {
+export type Skill =
+  | 'acrobatics'
+  | 'animalHandling'
+  | 'arcana'
+  | 'athletics'
+  | 'deception'
+  | 'history'
+  | 'insight'
+  | 'intimidation'
+  | 'investigation'
+  | 'medicine'
+  | 'nature'
+  | 'perception'
+  | 'performance'
+  | 'persuasion'
+  | 'religion'
+  | 'sleightOfHand'
+  | 'stealth'
+  | 'survival';
+
+export interface ClassDefinition {
   id: string;
   name: string;
-  summary: string;
-  description: string;
-  focus: Attribute;
-  attributes: Record<Attribute, number>;
-  startingAbilities: string[];
-  startingInventory: string[];
+  hitDie: number;
+  primaryAbilities: Ability[];
+  savingThrows: Ability[];
+  armorProficiencies: string[];
+  weaponProficiencies: string[];
+  toolProficiencies: string[];
+  skillOptions: Skill[];
+  skillChoices: number;
+  startingEquipment: string[];
+  features: string[];
+  spellcastingAbility?: Ability;
+}
+
+export interface RaceDefinition {
+  id: string;
+  name: string;
+  abilityBonuses: Partial<Record<Ability, number>>;
+  speed: number;
+  size: 'Small' | 'Medium';
+  traits: string[];
+  languages: string[];
+  proficiencies?: string[];
+}
+
+export interface BackgroundDefinition {
+  id: string;
+  name: string;
+  skillProficiencies: Skill[];
+  toolProficiencies: string[];
+  languages: string[];
+  equipment: string[];
+  feature: string;
+  suggestedCharacteristics: string[];
+}
+
+export interface HeroAbilityScores {
+  strength: number;
+  dexterity: number;
+  constitution: number;
+  intelligence: number;
+  wisdom: number;
+  charisma: number;
+}
+
+export interface HeroResources {
+  hitPoints: number;
+  tempHitPoints: number;
+  inspiration: number;
 }
 
 export interface HeroState {
   id: string;
   name: string;
-  archetypeId: string;
-  attributes: Record<Attribute, number>;
-  inventory: string[];
-  abilities: string[];
-  metrics: Record<Metric, number>;
+  level: number;
+  raceId: string;
+  classId: string;
+  backgroundId: string;
+  abilityScores: HeroAbilityScores;
+  proficiencyBonus: number;
+  savingThrows: Record<Ability, boolean>;
+  skills: Record<Skill, boolean>;
+  armorClass: number;
+  speed: number;
+  resources: HeroResources;
+  equipment: string[];
+  features: string[];
+  traits: string[];
+  languages: string[];
+  toolProficiencies: string[];
+  spellcastingAbility?: Ability;
+  spellSlots?: Record<number, number>;
+  notes: string[];
+  status: Record<string, number>;
   flags: Record<string, boolean>;
   allies: Record<string, 'ally' | 'rival' | 'neutral'>;
 }
@@ -28,10 +111,10 @@ export interface HeroState {
 export interface SceneEffect {
   addItems?: string[];
   removeItems?: string[];
-  metrics?: Partial<Record<Metric, number>>;
+  resources?: Partial<HeroResources>;
   flags?: Record<string, boolean>;
   allies?: Record<string, 'ally' | 'rival' | 'neutral'>;
-  abilities?: string[];
+  statusAdjust?: Record<string, number>;
   notes?: string[];
 }
 
@@ -43,12 +126,13 @@ export interface SceneOutcome {
 }
 
 export interface SkillCheckDefinition {
-  attribute: Attribute;
-  difficulty: number;
-  success: SceneOutcome;
-  failure: SceneOutcome;
+  ability: Ability;
+  skill?: Skill;
+  dc: number;
   advantageIfFlag?: string;
   disadvantageIfFlag?: string;
+  success: SceneOutcome;
+  failure: SceneOutcome;
 }
 
 export interface SceneChoice {
@@ -78,7 +162,6 @@ export interface Campaign {
   synopsis: string;
   introSceneId: string;
   scenes: SceneNode[];
-  archetypes: HeroArchetype[];
   guidance?: string[];
 }
 

@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { campaignData } from '../../shared/campaign.js';
-import type { Campaign, Metric } from '../../shared/types.js';
+import type { Campaign } from '../../shared/types.js';
 import { createOracleResponse } from './lib/npcOracle.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -30,7 +30,8 @@ app.get('/api/campaign', (_req, res) => {
 
 interface HeroPayload {
   name: string;
-  metrics?: Partial<Record<Metric, number>>;
+  status?: Record<string, number>;
+  resources?: { hitPoints?: number; tempHitPoints?: number; inspiration?: number };
   flags?: Record<string, boolean>;
 }
 
@@ -47,12 +48,16 @@ app.post('/api/oracle', (req, res) => {
 
   const reply = createOracleResponse(npcId, prompt, {
     name: hero.name,
-    // Fallback metrics structure if not provided.
-    metrics: {
-      stress: hero.metrics?.stress ?? 0,
-      wounds: hero.metrics?.wounds ?? 0,
-      influence: hero.metrics?.influence ?? 0,
-      corruption: hero.metrics?.corruption ?? 0
+    status: {
+      stress: hero.status?.stress ?? 0,
+      wounds: hero.status?.wounds ?? 0,
+      influence: hero.status?.influence ?? 0,
+      corruption: hero.status?.corruption ?? 0
+    },
+    resources: {
+      hitPoints: hero.resources?.hitPoints ?? 10,
+      tempHitPoints: hero.resources?.tempHitPoints ?? 0,
+      inspiration: hero.resources?.inspiration ?? 0
     },
     flags: hero.flags ?? {}
   });

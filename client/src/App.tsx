@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { GameProvider, useGame } from '@/context/GameContext';
-import HeroSetup from '@/components/HeroSetup';
+import CharacterCreator from '@/components/CharacterCreator';
 import SceneView from '@/components/SceneView';
 import Sidebar from '@/components/Sidebar';
 import LogPanel from '@/components/LogPanel';
@@ -8,6 +8,7 @@ import Epilogue from '@/components/Epilogue';
 import ConversationPanel from '@/components/ConversationPanel';
 import type { Campaign } from '@/types';
 import { campaignData } from '@shared/campaign';
+import { CLASS_DEFINITIONS, RACE_DEFINITIONS, BACKGROUND_DEFINITIONS } from '@shared/referenceData';
 
 const GameShell = ({
   isFetching,
@@ -18,11 +19,19 @@ const GameShell = ({
 }) => {
   const { campaign, hero, currentScene, isGameComplete } = useGame();
 
+  const race = hero ? RACE_DEFINITIONS.find((entry) => entry.id === hero.raceId) : null;
+  const klass = hero
+    ? CLASS_DEFINITIONS.find((entry) => entry.id === hero.classId)
+    : null;
+  const background = hero
+    ? BACKGROUND_DEFINITIONS.find((entry) => entry.id === hero.backgroundId)
+    : null;
+
   if (!hero) {
     return (
       <div className="app-shell">
         {error && <div className="banner warning">{error}</div>}
-        <HeroSetup />
+        <CharacterCreator />
         {isFetching && <div className="loading-indicator">Syncing campaign data…</div>}
       </div>
     );
@@ -46,8 +55,10 @@ const GameShell = ({
           <p>{campaign.synopsis}</p>
         </div>
         <div className="game-hero">
-          <span>Hero:</span>
-          <strong>{hero.name}</strong>
+          <span>{hero.name}</span>
+          <strong>
+            {klass?.name ?? 'Adventurer'} • {race?.name ?? 'Unknown'} • {background?.name ?? 'Wanderer'}
+          </strong>
         </div>
       </header>
 

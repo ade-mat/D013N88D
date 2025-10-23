@@ -10,7 +10,7 @@ export const campaignData: Campaign = {
     'Your hero carries four core attributes. Scenes will call for skill checks using these values.',
     'Success and failure both drive the story forward; lean into the complications that arise.',
     'Track allies and boons—they can shift later encounters or unlock new resolutions.',
-    'Stress and wounds increase difficulty while influence and corruption change the finale tone.'
+    'Stress and wounds increase dc while influence and corruption change the finale tone.'
   ],
   archetypes: [
     {
@@ -103,8 +103,9 @@ export const campaignData: Campaign = {
           id: 'intro_report_thorne',
           label: 'Report to Captain Marek Thorne to secure official support.',
           skillCheck: {
-            attribute: 'resolve',
-            difficulty: 14,
+            attribute: 'charisma',
+            skill: 'persuasion',
+            dc: 14,
             advantageIfFlag: 'met_seraphine',
             success: {
               id: 'outcome_thorne_aid',
@@ -115,7 +116,7 @@ export const campaignData: Campaign = {
                 flags: { marek_support: true },
                 allies: { marek: 'ally' },
                 addItems: ['Sentinel Badge'],
-                metrics: { influence: 1 }
+                statusAdjust: { influence: 1 }
               }
             },
             failure: {
@@ -125,14 +126,14 @@ export const campaignData: Campaign = {
                 'Suspicion flashes across Thorne’s scarred face. He orders you shadowed, complicating your next move.',
               effects: {
                 flags: { marek_suspicious: true },
-                metrics: { stress: 1 }
+                statusAdjust: { stress: 1 }
               }
             }
           }
         }
       ],
       onEnter: {
-        metrics: { stress: 1 },
+        statusAdjust: { stress: 1 },
         notes: ['The city is already on edge. Time is short.']
       }
     },
@@ -146,8 +147,9 @@ export const campaignData: Campaign = {
           id: 'seraphine_vision',
           label: 'Accept a guided vision of the spire.',
           skillCheck: {
-            attribute: 'insight',
-            difficulty: 13,
+            attribute: 'wisdom',
+            skill: 'insight',
+            dc: 13,
             success: {
               id: 'outcome_seraphine_vision_success',
               nextSceneId: 'market_crossroads',
@@ -155,7 +157,7 @@ export const campaignData: Campaign = {
                 'Flashes of staircases, guardian wards, and a caged tinkerer cascade before you. You commit the patterns to memory.',
               effects: {
                 flags: { mapped_spire: true },
-                metrics: { influence: 1 }
+                statusAdjust: { influence: 1 }
               }
             },
             failure: {
@@ -164,7 +166,7 @@ export const campaignData: Campaign = {
               narrative:
                 'The astral resonance scorches your mind. Seraphine steadies you, but the experience leaves you rattled.',
               effects: {
-                metrics: { stress: 2 },
+                statusAdjust: { stress: 2 },
                 flags: { astral_burn: true }
               }
             }
@@ -174,8 +176,9 @@ export const campaignData: Campaign = {
           id: 'seraphine_divination',
           label: 'Request a warded charm to shield against corruption.',
           skillCheck: {
-            attribute: 'resolve',
-            difficulty: 12,
+            attribute: 'charisma',
+            skill: 'persuasion',
+            dc: 12,
             success: {
               id: 'outcome_seraphine_charm',
               nextSceneId: 'market_crossroads',
@@ -192,7 +195,7 @@ export const campaignData: Campaign = {
               narrative:
                 'The ritual backfires, draining your stamina. Seraphine apologizes as the charm dissolves in sparks.',
               effects: {
-                metrics: { stress: 1, wounds: 1 }
+                statusAdjust: { stress: 1, wounds: 1 }
               }
             }
           }
@@ -222,8 +225,9 @@ export const campaignData: Campaign = {
           id: 'tamsin_gadget',
           label: 'Test a repulsor rig for vertical traversal.',
           skillCheck: {
-            attribute: 'finesse',
-            difficulty: 12,
+            attribute: 'dexterity',
+            skill: 'sleightOfHand',
+            dc: 12,
             success: {
               id: 'outcome_tamsin_repulsor',
               nextSceneId: 'market_crossroads',
@@ -240,7 +244,7 @@ export const campaignData: Campaign = {
               narrative:
                 'The rig sputters mid-lift, sending you tumbling into scrap metal. Tamsin winces and tosses you a bruise salve.',
               effects: {
-                metrics: { wounds: 1, stress: 1 }
+                statusAdjust: { wounds: 1, stress: 1 }
               }
             }
           }
@@ -262,8 +266,9 @@ export const campaignData: Campaign = {
           id: 'tamsin_static',
           label: 'Ask Tamsin to rig a stun charge in case of trouble.',
           skillCheck: {
-            attribute: 'insight',
-            difficulty: 11,
+            attribute: 'intelligence',
+            skill: 'arcana',
+            dc: 11,
             success: {
               id: 'outcome_tamsin_stun',
               nextSceneId: 'market_crossroads',
@@ -280,7 +285,7 @@ export const campaignData: Campaign = {
               narrative:
                 'The charge overloads, singing your fingertips. Tamsin fans away smoke with an apologetic shrug.',
               effects: {
-                metrics: { stress: 1 }
+                statusAdjust: { stress: 1 }
               }
             }
           }
@@ -306,7 +311,7 @@ export const campaignData: Campaign = {
               'Two sentinels flank you as you cut through barricades, clearing a direct route to the spire.',
             effects: {
               flags: { sentinel_route: true },
-              metrics: { influence: 1 }
+              statusAdjust: { influence: 1 }
             }
           }
         },
@@ -314,8 +319,9 @@ export const campaignData: Campaign = {
           id: 'throne_warn',
           label: 'Warn Thorne about astral backlash you sensed in the Heart.',
           skillCheck: {
-            attribute: 'insight',
-            difficulty: 13,
+            attribute: 'wisdom',
+            skill: 'insight',
+            dc: 13,
             success: {
               id: 'outcome_thorne_warn_success',
               nextSceneId: 'market_crossroads',
@@ -323,7 +329,7 @@ export const campaignData: Campaign = {
                 'Thorne adjusts his strategy, promising to evacuate the terraces and keep channels open for your signal.',
               effects: {
                 flags: { marek_support: true },
-                metrics: { influence: 1 }
+                statusAdjust: { influence: 1 }
               }
             },
             failure: {
@@ -332,7 +338,7 @@ export const campaignData: Campaign = {
               narrative:
                 'He nods politely but disbelief lingers. You leave with urgency gnawing at you.',
               effects: {
-                metrics: { stress: 1 }
+                statusAdjust: { stress: 1 }
               }
             }
           }
@@ -358,8 +364,9 @@ export const campaignData: Campaign = {
           id: 'marek_slip',
           label: 'Slip the tail using market stalls.',
           skillCheck: {
-            attribute: 'finesse',
-            difficulty: 13,
+            attribute: 'dexterity',
+            skill: 'stealth',
+            dc: 13,
             success: {
               id: 'outcome_marek_slip',
               nextSceneId: 'market_crossroads',
@@ -375,7 +382,7 @@ export const campaignData: Campaign = {
               narrative:
                 'A sentinel grazes your shoulder with a truncheon before you break free. Pain thrums as you bolt.',
               effects: {
-                metrics: { stress: 1, wounds: 1 }
+                statusAdjust: { stress: 1, wounds: 1 }
               }
             }
           }
@@ -384,15 +391,16 @@ export const campaignData: Campaign = {
           id: 'marek_confront',
           label: 'Confront the sentinels with raw determination.',
           skillCheck: {
-            attribute: 'might',
-            difficulty: 12,
+            attribute: 'charisma',
+            skill: 'intimidation',
+            dc: 12,
             success: {
               id: 'outcome_marek_intimidate',
               nextSceneId: 'market_crossroads',
               narrative:
                 'You plant your feet and declare authority. The sentinels, shaken by the spire’s tremors, back down.',
               effects: {
-                metrics: { influence: 1 },
+                statusAdjust: { influence: 1 },
                 flags: { marek_respects: true }
               }
             },
@@ -402,7 +410,7 @@ export const campaignData: Campaign = {
               narrative:
                 'They attempt to detain you, but chaos in the square forces them to release you with a final warning.',
               effects: {
-                metrics: { stress: 2 }
+                statusAdjust: { stress: 2 }
               }
             }
           }
@@ -412,8 +420,9 @@ export const campaignData: Campaign = {
           label: 'Use a forged signal flare to divert them.',
           requiresFlag: 'met_tamsin',
           skillCheck: {
-            attribute: 'insight',
-            difficulty: 11,
+            attribute: 'intelligence',
+            skill: 'investigation',
+            dc: 11,
             success: {
               id: 'outcome_marek_ruse_success',
               nextSceneId: 'market_crossroads',
@@ -429,7 +438,7 @@ export const campaignData: Campaign = {
               narrative:
                 'The flare sputters. The sentinels glare as you bolt, more stressed than before.',
               effects: {
-                metrics: { stress: 1 }
+                statusAdjust: { stress: 1 }
               }
             }
           }
@@ -446,15 +455,16 @@ export const campaignData: Campaign = {
           id: 'crossroads_aid_civilians',
           label: 'Aid trapped civilians to earn their trust.',
           skillCheck: {
-            attribute: 'might',
-            difficulty: 12,
+            attribute: 'strength',
+            skill: 'athletics',
+            dc: 12,
             success: {
               id: 'outcome_crossroads_aid_success',
               nextSceneId: 'spire_approach',
               narrative:
                 'You heft rubble aside, freeing a family. Grateful faces whisper blessings as you rush onward.',
               effects: {
-                metrics: { influence: 1 }
+                statusAdjust: { influence: 1 }
               }
             },
             failure: {
@@ -463,7 +473,7 @@ export const campaignData: Campaign = {
               narrative:
                 'The rubble shifts dangerously and you barely escape. Helping cost precious energy.',
               effects: {
-                metrics: { stress: 1 }
+                statusAdjust: { stress: 1 }
               }
             }
           }
@@ -473,8 +483,9 @@ export const campaignData: Campaign = {
           label: 'Consult a tethered spirit lingering near the spire lift.',
           requiresFlag: 'met_seraphine',
           skillCheck: {
-            attribute: 'insight',
-            difficulty: 12,
+            attribute: 'wisdom',
+            skill: 'religion',
+            dc: 12,
             success: {
               id: 'outcome_crossroads_spirit_success',
               nextSceneId: 'spire_approach',
@@ -490,7 +501,7 @@ export const campaignData: Campaign = {
               narrative:
                 'The spirit lashes out with cold fury. You stagger, spine iced by spectral touch.',
               effects: {
-                metrics: { stress: 1, corruption: 1 }
+                statusAdjust: { stress: 1, corruption: 1 }
               }
             }
           }
@@ -517,8 +528,9 @@ export const campaignData: Campaign = {
           id: 'approach_ritual_lift',
           label: 'Attempt to stabilize the ritual elevator.',
           skillCheck: {
-            attribute: 'insight',
-            difficulty: 14,
+            attribute: 'intelligence',
+            skill: 'arcana',
+            dc: 14,
             advantageIfFlag: 'met_seraphine',
             success: {
               id: 'outcome_lift_stabilized',
@@ -535,7 +547,7 @@ export const campaignData: Campaign = {
               narrative:
                 'Energy kicks back, forcing you to abandon the lift and crawl toward the maintenance shaft with ringing ears.',
               effects: {
-                metrics: { stress: 2 },
+                statusAdjust: { stress: 2 },
                 flags: { lift_failed: true }
               }
             }
@@ -545,8 +557,9 @@ export const campaignData: Campaign = {
           id: 'approach_maintenance',
           label: 'Climb the maintenance shaft Tamsin described.',
           skillCheck: {
-            attribute: 'finesse',
-            difficulty: 13,
+            attribute: 'dexterity',
+            skill: 'acrobatics',
+            dc: 13,
             advantageIfFlag: 'vertical_advantage',
             success: {
               id: 'outcome_shaft_success',
@@ -563,7 +576,7 @@ export const campaignData: Campaign = {
               narrative:
                 'A rung snaps. You slam into a crossbeam before catching yourself, bruised but alive.',
               effects: {
-                metrics: { wounds: 1, stress: 1 }
+                statusAdjust: { wounds: 1, stress: 1 }
               }
             }
           }
@@ -594,15 +607,16 @@ export const campaignData: Campaign = {
           id: 'lift_override',
           label: 'Force a restart through the control glyphs.',
           skillCheck: {
-            attribute: 'insight',
-            difficulty: 14,
+            attribute: 'intelligence',
+            skill: 'arcana',
+            dc: 14,
             success: {
               id: 'outcome_lift_override',
               nextSceneId: 'spire_midway',
               narrative:
                 'You decipher the glyph sequence and the lift glides onward, steady once more.',
               effects: {
-                metrics: { influence: 1 }
+                statusAdjust: { influence: 1 }
               }
             },
             failure: {
@@ -611,7 +625,7 @@ export const campaignData: Campaign = {
               narrative:
                 'The glyphs backlash, singeing your focus. The lift lurches upward erratically.',
               effects: {
-                metrics: { stress: 2 }
+                statusAdjust: { stress: 2 }
               }
             }
           }
@@ -650,8 +664,9 @@ export const campaignData: Campaign = {
           id: 'shaft_silent',
           label: 'Move silently between the conduits.',
           skillCheck: {
-            attribute: 'finesse',
-            difficulty: 13,
+            attribute: 'dexterity',
+            skill: 'stealth',
+            dc: 13,
             success: {
               id: 'outcome_shaft_silent',
               nextSceneId: 'spire_midway',
@@ -667,7 +682,7 @@ export const campaignData: Campaign = {
               narrative:
                 'A conduit flares, triggering dormant sentries that lurch to life.',
               effects: {
-                metrics: { stress: 1 }
+                statusAdjust: { stress: 1 }
               }
             }
           }
@@ -676,15 +691,16 @@ export const campaignData: Campaign = {
           id: 'shaft_force',
           label: 'Smash through an obstructing maintenance door.',
           skillCheck: {
-            attribute: 'might',
-            difficulty: 13,
+            attribute: 'strength',
+            skill: 'athletics',
+            dc: 13,
             success: {
               id: 'outcome_shaft_force',
               nextSceneId: 'spire_midway',
               narrative:
                 'You batter the door aside and storm through before the sentries recalibrate.',
               effects: {
-                metrics: { influence: 1 }
+                statusAdjust: { influence: 1 }
               }
             },
             failure: {
@@ -693,7 +709,7 @@ export const campaignData: Campaign = {
               narrative:
                 'The door holds. Sentinels converge as you brace for combat.',
               effects: {
-                metrics: { stress: 2 }
+                statusAdjust: { stress: 2 }
               }
             }
           }
@@ -736,15 +752,16 @@ export const campaignData: Campaign = {
           id: 'sentry_duel',
           label: 'Fight through the sentries with brute force.',
           skillCheck: {
-            attribute: 'might',
-            difficulty: 14,
+            attribute: 'strength',
+            skill: 'athletics',
+            dc: 14,
             success: {
               id: 'outcome_sentry_duel_success',
               nextSceneId: 'spire_midway',
               narrative:
                 'You cleave through the sentries, shattering their cores with decisive blows.',
               effects: {
-                metrics: { stress: 1 }
+                statusAdjust: { stress: 1 }
               }
             },
             failure: {
@@ -753,7 +770,7 @@ export const campaignData: Campaign = {
               narrative:
                 'The sentries slice into your defenses before you disable them. You stagger onward wounded.',
               effects: {
-                metrics: { wounds: 2, stress: 1 }
+                statusAdjust: { wounds: 2, stress: 1 }
               }
             }
           }
@@ -762,8 +779,9 @@ export const campaignData: Campaign = {
           id: 'sentry_hack',
           label: 'Attempt to hack their command protocols mid-combat.',
           skillCheck: {
-            attribute: 'insight',
-            difficulty: 15,
+            attribute: 'intelligence',
+            skill: 'arcana',
+            dc: 15,
             success: {
               id: 'outcome_sentry_hack',
               nextSceneId: 'spire_midway',
@@ -771,7 +789,7 @@ export const campaignData: Campaign = {
                 'Runes flare as you seize command of the sentries, ordering them to stand down.',
               effects: {
                 flags: { commandeered_sentries: true },
-                metrics: { influence: 1 }
+                statusAdjust: { influence: 1 }
               }
             },
             failure: {
@@ -780,14 +798,14 @@ export const campaignData: Campaign = {
               narrative:
                 'The hack slips. Feedback scorches your channels as you disable them the hard way.',
               effects: {
-                metrics: { stress: 2 }
+                statusAdjust: { stress: 2 }
               }
             }
           }
         }
       ],
       onEnter: {
-        metrics: { stress: 1 }
+        statusAdjust: { stress: 1 }
       }
     },
     {
@@ -800,8 +818,9 @@ export const campaignData: Campaign = {
           id: 'nerrix_free',
           label: 'Disable the containment rune lattice.',
           skillCheck: {
-            attribute: 'insight',
-            difficulty: 13,
+            attribute: 'intelligence',
+            skill: 'arcana',
+            dc: 13,
             success: {
               id: 'outcome_nerrix_free_success',
               nextSceneId: 'spire_midway',
@@ -818,7 +837,7 @@ export const campaignData: Campaign = {
               narrative:
                 'Energy flares, forcing you to abort before you fry both of you. Nerrix remains trapped, hope dwindling.',
               effects: {
-                metrics: { stress: 1 },
+                statusAdjust: { stress: 1 },
                 flags: { nerrix_failed: true }
               }
             }
@@ -828,8 +847,9 @@ export const campaignData: Campaign = {
           id: 'nerrix_bargain',
           label: 'Bargain with Nerrix for intel in exchange for later rescue.',
           skillCheck: {
-            attribute: 'resolve',
-            difficulty: 12,
+            attribute: 'charisma',
+            skill: 'persuasion',
+            dc: 12,
             success: {
               id: 'outcome_nerrix_bargain_success',
               nextSceneId: 'spire_midway',
@@ -846,7 +866,7 @@ export const campaignData: Campaign = {
                 'Nerrix curses you, vowing to sabotage your efforts if you abandon them.',
               effects: {
                 allies: { nerrix: 'rival' },
-                metrics: { corruption: 1 }
+                statusAdjust: { corruption: 1 }
               }
             }
           }
@@ -873,8 +893,9 @@ export const campaignData: Campaign = {
           id: 'midway_assess',
           label: 'Assess the plaza for hazards and opportunities.',
           skillCheck: {
-            attribute: 'insight',
-            difficulty: 12,
+            attribute: 'wisdom',
+            skill: 'perception',
+            dc: 12,
             success: {
               id: 'outcome_midway_assess_success',
               nextSceneId: 'heart_antechamber',
@@ -890,7 +911,7 @@ export const campaignData: Campaign = {
               narrative:
                 'A hidden glyph erupts, staggering you as you rush into the antechamber regardless.',
               effects: {
-                metrics: { stress: 1 }
+                statusAdjust: { stress: 1 }
               }
             }
           }
@@ -918,7 +939,7 @@ export const campaignData: Campaign = {
             narrative:
               'You inhale slow, calming breaths. Despite the chaos, clarity settles over you.',
             effects: {
-              metrics: { stress: -1 }
+              statusAdjust: { stress: -1 }
             }
           }
         }
@@ -958,8 +979,9 @@ export const campaignData: Campaign = {
           id: 'antechamber_listen',
           label: 'Listen to the whispers to glean Lirael’s state.',
           skillCheck: {
-            attribute: 'insight',
-            difficulty: 14,
+            attribute: 'wisdom',
+            skill: 'insight',
+            dc: 14,
             success: {
               id: 'outcome_antechamber_listen_success',
               nextSceneId: 'heart_chamber',
@@ -975,7 +997,7 @@ export const campaignData: Campaign = {
               narrative:
                 'The whispers claw at your mind. You stumble through the door shaken.',
               effects: {
-                metrics: { corruption: 1, stress: 1 }
+                statusAdjust: { corruption: 1, stress: 1 }
               }
             }
           }
@@ -992,8 +1014,9 @@ export const campaignData: Campaign = {
           id: 'heart_cleanse',
           label: 'Attempt to cleanse the Heart and restore Lirael.',
           skillCheck: {
-            attribute: 'resolve',
-            difficulty: 15,
+            attribute: 'charisma',
+            skill: 'persuasion',
+            dc: 15,
             advantageIfFlag: 'empathized_lirael',
             success: {
               id: 'outcome_heart_cleanse_success',
@@ -1003,7 +1026,7 @@ export const campaignData: Campaign = {
               effects: {
                 flags: { heart_cleansed: true },
                 allies: { lirael: 'ally' },
-                metrics: { influence: 2 }
+                statusAdjust: { influence: 2 }
               }
             },
             failure: {
@@ -1012,7 +1035,7 @@ export const campaignData: Campaign = {
               narrative:
                 'The Heart resists, lashing you with scorching light. Lirael howls and the chamber quakes.',
               effects: {
-                metrics: { stress: 2, corruption: 1 }
+                statusAdjust: { stress: 2, corruption: 1 }
               }
             }
           }
@@ -1021,8 +1044,9 @@ export const campaignData: Campaign = {
           id: 'heart_bargain',
           label: 'Bargain with the Heart, offering to bear its burden.',
           skillCheck: {
-            attribute: 'insight',
-            difficulty: 15,
+            attribute: 'wisdom',
+            skill: 'religion',
+            dc: 15,
             success: {
               id: 'outcome_heart_bargain_success',
               nextSceneId: 'escape_gauntlet',
@@ -1030,7 +1054,7 @@ export const campaignData: Campaign = {
                 'You entwine your essence with the Heart, taking on its radiance. Lirael bows, freed of the curse.',
               effects: {
                 flags: { heart_bargained: true },
-                metrics: { corruption: 1 }
+                statusAdjust: { corruption: 1 }
               }
             },
             failure: {
@@ -1039,7 +1063,7 @@ export const campaignData: Campaign = {
               narrative:
                 'The Heart recoils, destabilizing further. Lirael readies to strike as cracks splinter the chamber.',
               effects: {
-                metrics: { stress: 2 },
+                statusAdjust: { stress: 2 },
                 flags: { lirael_enraged: true }
               }
             }
@@ -1049,8 +1073,9 @@ export const campaignData: Campaign = {
           id: 'heart_shatter',
           label: 'Shatter the Heart to prevent catastrophic corruption.',
           skillCheck: {
-            attribute: 'might',
-            difficulty: 16,
+            attribute: 'strength',
+            skill: 'athletics',
+            dc: 16,
             success: {
               id: 'outcome_heart_shatter_success',
               nextSceneId: 'escape_gauntlet',
@@ -1058,7 +1083,7 @@ export const campaignData: Campaign = {
                 'You smash the Heart, dispersing its energy. Lirael collapses, and the spire begins to crumble outright.',
               effects: {
                 flags: { heart_shattered: true },
-                metrics: { stress: 1 }
+                statusAdjust: { stress: 1 }
               }
             },
             failure: {
@@ -1067,7 +1092,7 @@ export const campaignData: Campaign = {
               narrative:
                 'The Heart resists your strike, detonating in a wave that sears your flesh.',
               effects: {
-                metrics: { stress: 2, wounds: 2 },
+                statusAdjust: { stress: 2, wounds: 2 },
                 flags: { heart_instable: true }
               }
             }
@@ -1085,8 +1110,9 @@ export const campaignData: Campaign = {
           id: 'escape_dash',
           label: 'Sprint through falling debris.',
           skillCheck: {
-            attribute: 'finesse',
-            difficulty: 14,
+            attribute: 'dexterity',
+            skill: 'acrobatics',
+            dc: 14,
             advantageIfFlag: 'stealth_route',
             success: {
               id: 'outcome_escape_dash_success',
@@ -1094,7 +1120,7 @@ export const campaignData: Campaign = {
               narrative:
                 'You vault collapsing platforms and burst onto a stable ledge overlooking Emberfall.',
               effects: {
-                metrics: { stress: 1 }
+                statusAdjust: { stress: 1 }
               }
             },
             failure: {
@@ -1103,7 +1129,7 @@ export const campaignData: Campaign = {
               narrative:
                 'Debris slams into you mid-leap. You limp onward, battered but alive.',
               effects: {
-                metrics: { wounds: 2, stress: 1 }
+                statusAdjust: { wounds: 2, stress: 1 }
               }
             }
           }

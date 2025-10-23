@@ -94,7 +94,8 @@ const ConversationPanel = () => {
           prompt,
           hero: {
             name: hero.name,
-            metrics: hero.metrics,
+            status: hero.status,
+            resources: hero.resources,
             flags: hero.flags
           }
         })

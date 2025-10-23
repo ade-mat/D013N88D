@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useGame } from '@/context/GameContext';
+import { ABILITY_LABEL, SKILLS } from '@shared/referenceData';
 
 const determineEnding = (flags: Record<string, boolean>) => {
   if (flags.heart_cleansed) {
@@ -18,7 +19,7 @@ const determineEnding = (flags: Record<string, boolean>) => {
 };
 
 const Epilogue = () => {
-  const { hero, log, resetGame } = useGame();
+  const { hero, log, resetGame, abilityMod } = useGame();
 
   const highlightLog = useMemo(() => log.slice(-6).reverse(), [log]);
 
@@ -36,13 +37,49 @@ const Epilogue = () => {
       </header>
 
       <section className="epilogue-metrics">
-        <h3>Final State</h3>
+        <h3>Final Ability Scores</h3>
         <ul>
-          {Object.entries(hero.metrics).map(([metric, value]) => (
-            <li key={metric}>
-              {metric.toUpperCase()}: <strong>{value}</strong>
+          {Object.entries(hero.abilityScores).map(([ability, score]) => {
+            const typed = ability as keyof typeof ABILITY_LABEL;
+            const modifier = abilityMod(typed);
+            return (
+              <li key={ability}>
+                {ABILITY_LABEL[typed]}: <strong>{score}</strong>{' '}
+                <span className="muted">(mod {modifier >= 0 ? `+${modifier}` : modifier})</span>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      <section className="epilogue-metrics">
+        <h3>Status Trackers</h3>
+        <ul>
+          {Object.entries(hero.status).map(([key, value]) => (
+            <li key={key}>
+              {key.replace(/_/g, ' ')}: <strong>{value}</strong>
             </li>
           ))}
+          <li>
+            Hit Points: <strong>{hero.resources.hitPoints}</strong>
+          </li>
+          <li>
+            Inspiration: <strong>{hero.resources.inspiration}</strong>
+          </li>
+        </ul>
+      </section>
+
+      <section className="epilogue-metrics">
+        <h3>Proficiencies</h3>
+        <ul>
+          {SKILLS.filter((skill) => hero.skills[skill.id]).map((skill) => (
+            <li key={skill.id}>
+              {skill.label} ({ABILITY_LABEL[skill.ability]})
+            </li>
+          ))}
+          {hero.toolProficiencies.length > 0 && (
+            <li>Tools: {hero.toolProficiencies.join(', ')}</li>
+          )}
         </ul>
       </section>
 

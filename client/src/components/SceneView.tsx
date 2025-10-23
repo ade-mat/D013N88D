@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useGame } from '@/context/GameContext';
 import type { SceneChoice, SceneNode } from '@/types';
+import { ABILITY_LABEL, SKILLS } from '@shared/referenceData';
 
 type AugmentedChoice = SceneChoice & {
   isHidden: boolean;
@@ -42,8 +43,10 @@ const SceneView = ({ scene }: SceneViewProps) => {
     }
     return (
       <p className="choice-meta">
-        Skill Check — {choice.skillCheck.attribute.toUpperCase()} vs DC{' '}
-        {choice.skillCheck.difficulty}
+        {choice.skillCheck.skill
+          ? `${SKILLS.find((entry) => entry.id === choice.skillCheck?.skill)?.label ?? 'Skill'} ( ${ABILITY_LABEL[choice.skillCheck.ability]} )`
+          : `${ABILITY_LABEL[choice.skillCheck.ability]} Check`}{' '}
+        vs DC {choice.skillCheck.dc}
       </p>
     );
   };
@@ -59,10 +62,18 @@ const SceneView = ({ scene }: SceneViewProps) => {
 
       {lastRoll && (
         <div className={`roll-summary ${lastRoll.success ? 'success' : 'failure'}`}>
-          <strong>Last Roll:</strong> d20 {lastRoll.die}
-          {lastRoll.secondaryDie !== undefined && ` / ${lastRoll.secondaryDie}`}{' '}
-          + {lastRoll.modifier} = {lastRoll.total} vs DC {lastRoll.difficulty}{' '}
-          ({lastRoll.success ? 'Success' : 'Failure'})
+          <strong>Last Check:</strong>{' '}
+          {lastRoll.skill
+            ? `${SKILLS.find((entry) => entry.id === lastRoll.skill)?.label ?? lastRoll.skill} (${ABILITY_LABEL[lastRoll.ability]})`
+            : `${ABILITY_LABEL[lastRoll.ability]} Check`}
+          <p className="roll-detail">
+            d20 {lastRoll.primary}
+            {lastRoll.secondary !== undefined && ` / ${lastRoll.secondary}`} • kept {lastRoll.kept}
+          </p>
+          <p className="roll-detail">
+            Total {lastRoll.total} vs DC {lastRoll.dc}{' '}
+            {lastRoll.success ? 'Success' : 'Failure'}
+          </p>
         </div>
       )}
 

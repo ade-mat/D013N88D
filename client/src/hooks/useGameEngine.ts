@@ -1,18 +1,33 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
+  Ability,
   Campaign,
   ConversationTurn,
-  HeroArchetype,
+  HeroResources,
   HeroState,
   LogEntry,
-  Metric,
   SceneChoice,
   SceneEffect,
   SceneNode,
-  SceneOutcome
+  SceneOutcome,
+  Skill
 } from '@/types';
 import { campaignData } from '@shared/campaign';
-import { executeRoll, RollResult } from '@/utils/dice';
+import {
+  ABILITIES,
+  ABILITY_LABEL,
+  BACKGROUND_DEFINITIONS,
+  CLASS_DEFINITIONS,
+  RACE_DEFINITIONS,
+  SKILLS
+} from '@shared/referenceData';
+import {
+  CheckRollResult,
+  CheckRollOptions,
+  formatCheckSummary,
+  getSkillAbility,
+  rollAbilityCheck
+} from '@/utils/dice';
 
 interface StoredState {
   hero: HeroState | null;
@@ -22,7 +37,8 @@ interface StoredState {
   conversation: Record<string, ConversationTurn[]>;
 }
 
-const LOCAL_STORAGE_KEY = 'emberfall-ascent-save-v1';
+const LOCAL_STORAGE_KEY = 'emberfall-ascent-save-v2';
+
 const buildLogEntry = (
   type: LogEntry['type'],
   label: string,
@@ -35,29 +51,160 @@ const buildLogEntry = (
   createdAt: Date.now()
 });
 
-const defaultMetrics: Record<Metric, number> = {
-  stress: 0,
-  wounds: 0,
-  influence: 0,
-  corruption: 0
+const DEFAULT_STATUS_KEYS = ['stress', 'wounds', 'influence', 'corruption'] as const;
+
+const clampStatusValue = (key: string, value: number) => {
+  if (key === 'influence') {
+    return Math.min(Math.max(value, 0), 6);
+  }
+  if (key === 'corruption') {
+    return Math.min(Math.max(value, 0), 6);
+  }
+  return Math.min(Math.max(value, 0), 8);
 };
 
-const clampMetric = (metric: Metric, value: number) => {
-  const max = metric === 'influence' ? 6 : metric === 'corruption' ? 6 : 8;
-  return Math.min(Math.max(value, 0), max);
+const getAbilityModifier = (score: number) => Math.floor((score - 10) / 2);
+
+const initializeStatus = () => {
+  const status: Record<string, number> = {};
+  DEFAULT_STATUS_KEYS.forEach((key) => {
+    status[key] = 0;
+  });
+  return status;
 };
 
-const createHeroState = (archetype: HeroArchetype, name: string): HeroState => ({
-  id: `${archetype.id}-${Date.now()}`,
-  name,
-  archetypeId: archetype.id,
-  attributes: { ...archetype.attributes },
-  inventory: [...archetype.startingInventory],
-  abilities: [...archetype.startingAbilities],
-  metrics: { ...defaultMetrics },
-  flags: {},
-  allies: {}
-});
+const initializeSkills = () => {
+  const skills: Record<Skill, boolean> = {} as Record<Skill, boolean>;
+  SKILLS.forEach((skill) => {
+    skills[skill.id] = false;
+  });
+  return skills;
+};
+
+const skillIdFromLabel = (label: string): Skill | undefined => {
+  const normalised = label.replace(/[^a-zA-Z]/g, '').toLowerCase();
+  return SKILLS.find((entry) => entry.label.replace(/[^a-zA-Z]/g, '').toLowerCase() === normalised)?.id;
+};
+
+export interface CharacterBuild {
+  name: string;
+  raceId: string;
+  classId: string;
+  backgroundId: string;
+  abilityScores: Record<Ability, number>;
+  selectedSkills: Skill[];
+  notes?: string[];
+}
+
+const createHeroState = (build: CharacterBuild): HeroState => {
+  const race = RACE_DEFINITIONS.find((entry) => entry.id === build.raceId) ??
+    RACE_DEFINITIONS[0];
+  const klass = CLASS_DEFINITIONS.find((entry) => entry.id === build.classId) ??
+    CLASS_DEFINITIONS[0];
+  const background =
+    BACKGROUND_DEFINITIONS.find((entry) => entry.id === build.backgroundId) ??
+    BACKGROUND_DEFINITIONS[0];
+
+  const raceAdjustedScores: Record<Ability, number> = ABILITIES.reduce(
+    (acc, ability) => {
+      const base = build.abilityScores[ability] ?? 10;
+      const racialBonus = race.abilityBonuses?.[ability] ?? 0;
+      return {
+        ...acc,
+        [ability]: base + racialBonus
+      };
+    },
+    {} as Record<Ability, number>
+  );
+
+  const proficiencyBonus = 2; // Level 1 baseline.
+
+  const savingThrows = ABILITIES.reduce<Record<Ability, boolean>>((acc, ability) => {
+    acc[ability] = klass.savingThrows.includes(ability);
+    return acc;
+  }, {} as Record<Ability, boolean>);
+
+  const skillMap = initializeSkills();
+
+  background.skillProficiencies.forEach((skill) => {
+    skillMap[skill] = true;
+  });
+
+  build.selectedSkills.forEach((skill) => {
+    skillMap[skill] = true;
+  });
+
+  if (race.proficiencies) {
+    race.proficiencies.forEach((label) => {
+      const skill = skillIdFromLabel(label);
+      if (skill) {
+        skillMap[skill] = true;
+      }
+    });
+  }
+
+  const abilityModCon = getAbilityModifier(raceAdjustedScores.constitution);
+  const hitPoints = Math.max(klass.hitDie + abilityModCon, 1);
+
+  const equipment = new Set<string>();
+  klass.startingEquipment.forEach((item) => equipment.add(item));
+  background.equipment.forEach((item) => equipment.add(item));
+
+  const features: string[] = [];
+  features.push(...klass.features);
+  features.push(background.feature);
+  features.push(...race.traits);
+
+  const languages = new Set<string>();
+  race.languages.forEach((language) => languages.add(language));
+  background.languages.forEach((language) => languages.add(language));
+
+  const toolProficiencies = new Set<string>();
+  klass.toolProficiencies.forEach((tool) => toolProficiencies.add(tool));
+  background.toolProficiencies.forEach((tool) => toolProficiencies.add(tool));
+
+  const hero: HeroState = {
+    id: `${build.classId}-${Date.now().toString(16)}`,
+    name: build.name,
+    level: 1,
+    raceId: race.id,
+    classId: klass.id,
+    backgroundId: background.id,
+    abilityScores: {
+      strength: raceAdjustedScores.strength,
+      dexterity: raceAdjustedScores.dexterity,
+      constitution: raceAdjustedScores.constitution,
+      intelligence: raceAdjustedScores.intelligence,
+      wisdom: raceAdjustedScores.wisdom,
+      charisma: raceAdjustedScores.charisma
+    },
+    proficiencyBonus,
+    savingThrows,
+    skills: skillMap,
+    armorClass: 10 + getAbilityModifier(raceAdjustedScores.dexterity),
+    speed: race.speed,
+    resources: {
+      hitPoints,
+      tempHitPoints: 0,
+      inspiration: 0
+    },
+    equipment: Array.from(equipment),
+    features,
+    traits: race.traits,
+    languages: Array.from(languages),
+    toolProficiencies: Array.from(toolProficiencies),
+    spellcastingAbility: klass.spellcastingAbility,
+    spellSlots: klass.spellcastingAbility
+      ? { 1: 2 }
+      : undefined,
+    notes: build.notes ?? [],
+    status: initializeStatus(),
+    flags: {},
+    allies: {}
+  };
+
+  return hero;
+};
 
 const applyEffect = (hero: HeroState, effect?: SceneEffect): HeroState => {
   if (!effect) {
@@ -66,41 +213,27 @@ const applyEffect = (hero: HeroState, effect?: SceneEffect): HeroState => {
 
   const updated: HeroState = {
     ...hero,
-    inventory: [...hero.inventory],
-    abilities: [...hero.abilities],
-    metrics: { ...hero.metrics },
+    equipment: [...hero.equipment],
+    features: [...hero.features],
+    notes: [...hero.notes],
+    status: { ...hero.status },
     flags: { ...hero.flags },
-    allies: { ...hero.allies }
+    allies: { ...hero.allies },
+    resources: { ...hero.resources }
   };
 
   if (effect.addItems) {
     effect.addItems.forEach((item) => {
-      if (!updated.inventory.includes(item)) {
-        updated.inventory.push(item);
+      if (!updated.equipment.includes(item)) {
+        updated.equipment.push(item);
       }
     });
   }
 
   if (effect.removeItems) {
-    updated.inventory = updated.inventory.filter(
+    updated.equipment = updated.equipment.filter(
       (item) => !effect.removeItems?.includes(item)
     );
-  }
-
-  if (effect.abilities) {
-    effect.abilities.forEach((ability) => {
-      if (!updated.abilities.includes(ability)) {
-        updated.abilities.push(ability);
-      }
-    });
-  }
-
-  if (effect.metrics) {
-    Object.entries(effect.metrics).forEach(([metric, delta]) => {
-      const typedMetric = metric as Metric;
-      const previous = updated.metrics[typedMetric] ?? 0;
-      updated.metrics[typedMetric] = clampMetric(typedMetric, previous + delta);
-    });
   }
 
   if (effect.flags) {
@@ -109,10 +242,32 @@ const applyEffect = (hero: HeroState, effect?: SceneEffect): HeroState => {
     });
   }
 
+  if (effect.statusAdjust) {
+    Object.entries(effect.statusAdjust).forEach(([key, delta]) => {
+      const previous = updated.status[key] ?? 0;
+      updated.status[key] = clampStatusValue(key, previous + delta);
+    });
+  }
+
   if (effect.allies) {
     Object.entries(effect.allies).forEach(([ally, status]) => {
       updated.allies[ally] = status;
     });
+  }
+
+  if (effect.notes) {
+    updated.notes.push(...effect.notes);
+  }
+
+  if (effect.resources) {
+    const mergeResource = (key: keyof HeroResources) => {
+      if (typeof effect.resources?.[key] === 'number') {
+        updated.resources[key] = Math.max(0, effect.resources[key]!);
+      }
+    };
+    mergeResource('hitPoints');
+    mergeResource('tempHitPoints');
+    mergeResource('inspiration');
   }
 
   return updated;
@@ -131,15 +286,16 @@ export interface GameEngine {
   currentScene: SceneNode | null;
   currentSceneId: string | null;
   log: LogEntry[];
-  lastRoll: RollResult | null;
+  lastRoll: CheckRollResult | null;
   visitedScenes: Record<string, number>;
   conversation: Record<string, ConversationTurn[]>;
-  startGame: (payload: { name: string; archetypeId: string }) => void;
+  startGame: (build: CharacterBuild) => void;
   chooseOption: (choiceId: string) => void;
   resetGame: () => void;
   recordPlayerConversation: (npcId: string, text: string) => void;
   recordNpcConversation: (npcId: string, text: string) => void;
   isGameComplete: boolean;
+  abilityMod: (ability: Ability) => number;
 }
 
 export const useGameEngine = (remoteCampaign: Campaign | null): GameEngine => {
@@ -151,7 +307,7 @@ export const useGameEngine = (remoteCampaign: Campaign | null): GameEngine => {
   );
   const [log, setLog] = useState<LogEntry[]>([]);
   const [visitedScenes, setVisitedScenes] = useState<Record<string, number>>({});
-  const [lastRoll, setLastRoll] = useState<RollResult | null>(null);
+  const [lastRoll, setLastRoll] = useState<CheckRollResult | null>(null);
   const [conversation, setConversation] = useState<
     Record<string, ConversationTurn[]>
   >({});
@@ -161,6 +317,16 @@ export const useGameEngine = (remoteCampaign: Campaign | null): GameEngine => {
   const currentScene = useMemo(
     () => getScene(campaign, currentSceneId),
     [campaign, currentSceneId]
+  );
+
+  const abilityMod = useCallback(
+    (ability: Ability) => {
+      if (!hero) {
+        return 0;
+      }
+      return getAbilityModifier(hero.abilityScores[ability]);
+    },
+    [hero]
   );
 
   const persistState = useCallback(
@@ -176,7 +342,7 @@ export const useGameEngine = (remoteCampaign: Campaign | null): GameEngine => {
   const appendLog = useCallback((entry: LogEntry) => {
     setLog((prev) => {
       const next = [...prev, entry];
-      return next.slice(-120);
+      return next.slice(-150);
     });
   }, []);
 
@@ -201,16 +367,59 @@ export const useGameEngine = (remoteCampaign: Campaign | null): GameEngine => {
     [appendLog]
   );
 
+  const handleSkillCheck = useCallback(
+    (
+      choice: SceneChoice,
+      heroState: HeroState
+    ) => {
+      if (!choice.skillCheck) {
+        return heroState;
+      }
+
+      const { ability, skill, dc, advantageIfFlag, disadvantageIfFlag } =
+        choice.skillCheck;
+
+      const abilityModifier = getAbilityModifier(heroState.abilityScores[ability]);
+      const proficientInSkill = skill ? heroState.skills[skill] === true : false;
+      const miscBonus = heroState.flags['heart_cleansed'] && ability === 'wisdom' ? 1 : 0;
+
+      const options: CheckRollOptions = {
+        ability,
+        abilityMod: abilityModifier,
+        proficiencyBonus: heroState.proficiencyBonus,
+        proficient: proficientInSkill,
+        miscBonus,
+        dc,
+        advantage: advantageIfFlag ? heroState.flags[advantageIfFlag] === true : false,
+        disadvantage: disadvantageIfFlag
+          ? heroState.flags[disadvantageIfFlag] === true
+          : false,
+        skill
+      };
+
+      const roll = rollAbilityCheck(options);
+      setLastRoll(roll);
+      const labelParts = [
+        `Check: ${skill ? skill.replace(/([A-Z])/g, ' $1') : ABILITY_LABEL[ability]}`
+      ];
+      appendLog(buildLogEntry('roll', labelParts.join(' '), formatCheckSummary(roll)));
+
+      const outcome = roll.success
+        ? choice.skillCheck.success
+        : choice.skillCheck.failure;
+
+      return applyOutcome(outcome, heroState);
+    },
+    [appendLog, applyOutcome]
+  );
+
   const chooseOption = useCallback(
     (choiceId: string) => {
       if (!hero || !currentScene) {
         return;
       }
 
-      const choice: SceneChoice | undefined = currentScene.options.find(
-        (option) => option.id === choiceId
-      );
-
+      const choice = currentScene.options.find((option) => option.id === choiceId);
       if (!choice) {
         return;
       }
@@ -223,51 +432,22 @@ export const useGameEngine = (remoteCampaign: Campaign | null): GameEngine => {
       }
 
       if (choice.skillCheck) {
-        const { attribute, difficulty, advantageIfFlag, disadvantageIfFlag } =
-          choice.skillCheck;
-        const modifier = hero.attributes[attribute] ?? 0;
-        const advantage = advantageIfFlag ? hero.flags[advantageIfFlag] === true : false;
-        const disadvantage = disadvantageIfFlag
-          ? hero.flags[disadvantageIfFlag] === true
-          : false;
-        const roll = executeRoll({
-          modifier,
-          difficulty,
-          attribute,
-          advantage,
-          disadvantage
-        });
-        setLastRoll(roll);
-        appendLog(
-          buildLogEntry(
-            'roll',
-            `D20 + ${attribute.toUpperCase()}`,
-            `Rolled ${roll.total} vs DC ${difficulty}`
-          )
-        );
-
-        const outcome = roll.success
-          ? choice.skillCheck.success
-          : choice.skillCheck.failure;
-        applyOutcome(outcome, hero);
+        const updatedHero = handleSkillCheck(choice, hero);
+        setHero(updatedHero);
       }
     },
-    [appendLog, applyOutcome, currentScene, hero]
+    [appendLog, applyOutcome, currentScene, handleSkillCheck, hero]
   );
 
   const startGame = useCallback(
-    ({ name, archetypeId }: { name: string; archetypeId: string }) => {
-      const archetype =
-        campaign.archetypes.find((entry) => entry.id === archetypeId) ??
-        campaign.archetypes[0];
-      const newHero = createHeroState(archetype, name);
-
+    (build: CharacterBuild) => {
+      const newHero = createHeroState(build);
       setHero(newHero);
       setLog([
         buildLogEntry(
           'narration',
           `Welcome, ${newHero.name}`,
-          `Archetype: ${archetype.name}`
+          `${CLASS_DEFINITIONS.find((c) => c.id === newHero.classId)?.name ?? 'Adventurer'} of the ${RACE_DEFINITIONS.find((r) => r.id === newHero.raceId)?.name ?? 'Unknown'} lineage`
         )
       ]);
       setVisitedScenes({});
@@ -276,7 +456,7 @@ export const useGameEngine = (remoteCampaign: Campaign | null): GameEngine => {
       setCurrentSceneId(campaign.introSceneId);
       lastSceneIdRef.current = null;
     },
-    [campaign]
+    [campaign.introSceneId]
   );
 
   const resetGame = useCallback(() => {
@@ -329,7 +509,7 @@ export const useGameEngine = (remoteCampaign: Campaign | null): GameEngine => {
         setVisitedScenes(parsed.visitedScenes ?? {});
         setConversation(parsed.conversation ?? {});
       } catch {
-        // Ignore corrupted saves.
+        // swallow malformed saves
       }
     }
     setHasLoaded(true);
@@ -339,6 +519,7 @@ export const useGameEngine = (remoteCampaign: Campaign | null): GameEngine => {
     if (!hasLoaded) {
       return;
     }
+
     persistState({
       hero,
       currentSceneId,
@@ -369,15 +550,14 @@ export const useGameEngine = (remoteCampaign: Campaign | null): GameEngine => {
       [scene.id]: (prev[scene.id] ?? 0) + 1
     }));
 
-    const { onEnter } = scene;
-    if (onEnter) {
+    if (scene.onEnter) {
       setHero((prevHero) => {
         if (!prevHero) {
           return prevHero;
         }
-        const nextHero = applyEffect(prevHero, onEnter);
-        if (onEnter.notes && onEnter.notes.length > 0) {
-          onEnter.notes.forEach((note) =>
+        const nextHero = applyEffect(prevHero, scene.onEnter);
+        if (scene.onEnter.notes && scene.onEnter.notes.length > 0) {
+          scene.onEnter.notes.forEach((note) =>
             appendLog(buildLogEntry('narration', 'Insight', note))
           );
         }
@@ -402,6 +582,7 @@ export const useGameEngine = (remoteCampaign: Campaign | null): GameEngine => {
     resetGame,
     recordPlayerConversation,
     recordNpcConversation,
-    isGameComplete
+    isGameComplete,
+    abilityMod
   };
 };
