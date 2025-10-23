@@ -63,11 +63,15 @@ export const parseAndRollFormula = (formula: string): DiceFormulaResult => {
 
   const total = rolls.reduce((sum, roll) => sum + roll.die, 0) + modifier;
 
+  const baseFormula = `${count}d${sides}`;
+  const displayFormula =
+    modifier === 0 ? baseFormula : `${baseFormula}${modifier >= 0 ? `+${modifier}` : modifier}`;
+
   return {
     rolls,
     total,
     modifier,
-    formula: `${count}d${sides}${modifier >= 0 ? `+${modifier}` : modifier}`
+    formula: displayFormula
   };
 };
 

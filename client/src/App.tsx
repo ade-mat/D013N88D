@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar';
 import LogPanel from '@/components/LogPanel';
 import Epilogue from '@/components/Epilogue';
 import ConversationPanel from '@/components/ConversationPanel';
+import DiceTray from '@/components/DiceTray';
 import type { Campaign } from '@/types';
 import { campaignData } from '@shared/campaign';
 import { CLASS_DEFINITIONS, RACE_DEFINITIONS, BACKGROUND_DEFINITIONS } from '@shared/referenceData';
@@ -75,6 +76,7 @@ const GameShell = ({
         <section className="secondary-panel">
           <Sidebar />
           <ConversationPanel />
+          <DiceTray />
           <LogPanel />
         </section>
       </main>

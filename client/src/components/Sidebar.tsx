@@ -121,6 +121,22 @@ const Sidebar = () => {
               <strong>{entry.value}</strong>
             </li>
           ))}
+          <li>
+            <span>Hit Points</span>
+            <strong>{hero.resources.hitPoints}</strong>
+          </li>
+          {hero.resources.tempHitPoints > 0 && (
+            <li>
+              <span>Temp HP</span>
+              <strong>{hero.resources.tempHitPoints}</strong>
+            </li>
+          )}
+          {hero.resources.inspiration > 0 && (
+            <li>
+              <span>Inspiration</span>
+              <strong>{hero.resources.inspiration}</strong>
+            </li>
+          )}
         </ul>
       </section>
 

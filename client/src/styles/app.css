@@ -632,6 +632,72 @@ button {
   min-height: 80px;
 }
 
+.dice-tray {
+  background: var(--bg-panel);
+  border-radius: 1.25rem;
+  border: 1px solid var(--border);
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dice-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dice-input {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.dice-input input {
+  flex: 1;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(15, 23, 42, 0.65);
+  color: var(--text);
+  padding: 0.6rem 0.75rem;
+}
+
+.quick-dice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.dice-history {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+}
+
+.dice-history li {
+  background: rgba(15, 23, 42, 0.55);
+  border-radius: 0.8rem;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  padding: 0.65rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.dice-history li span {
+  color: rgba(129, 140, 248, 0.9);
+}
+
+.dice-history li em {
+  font-style: normal;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
 .log-panel header {
   margin-bottom: 0.75rem;
 }

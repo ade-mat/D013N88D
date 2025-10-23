@@ -1,6 +1,6 @@
 # Emberfall Ascent – Solo D&D Web Adventure
 
-Emberfall Ascent is a single-player narrative RPG inspired by tabletop D&D. Build a lone hero, roll dynamic skill checks, and guide them through a three-act campaign to reclaim the Heart of Embers before the floating spire collapses on the city below.
+Emberfall Ascent is a single-player narrative RPG inspired by tabletop D&D. Build a lone hero with authentic 5e-style character creation, roll dynamic skill checks, and guide them through a three-act campaign to reclaim the Heart of Embers before the floating spire collapses on the city below.
 
 ## Campaign Highlights
 
@@ -12,7 +12,7 @@ Emberfall Ascent is a single-player narrative RPG inspired by tabletop D&D. Buil
 
 ## Tech Stack
 
-- **Frontend:** React + TypeScript (Vite), scoped CSS.
+- **Frontend:** React + TypeScript (Vite), scoped CSS, dedicated dice tray utilities.
 - **State:** Custom hook + context for hero progression, log history, and branching outcomes.
 - **Backend:** Express (TypeScript) exposing campaign JSON, NPC oracle endpoint, and static asset hosting.
 - **Shared data:** Campaign structure & types live under `shared/` for both client and server.
@@ -46,9 +46,10 @@ By default the Express server runs on `http://localhost:4000` and proxies `/api/
 
 ### Notable Client Components
 
-- `HeroSetup` – hero creation screen with archetype cards and campaign tips.
+- `CharacterCreator` – multi-step D&D character builder (race, class, background, ability scores, skill proficiencies).
 - `SceneView` – renders narrative text, dice results, and branching choices.
 - `ConversationPanel` – talk to allies (Seraphine, Tamsin, Marek, Nerrix, Lirael) with fallback oracle responses.
+- `DiceTray` – quick access to arbitrary dice formulas (d4 through custom expressions).
 - `Sidebar` & `LogPanel` – track stats, inventory, allies, and story log.
 - `Epilogue` – summarises endings based on heart outcome + flags.
 

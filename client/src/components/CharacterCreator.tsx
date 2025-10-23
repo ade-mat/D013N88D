@@ -268,7 +268,11 @@ const CharacterCreator = () => {
                 ))}
               </select>
               <p className="muted small-text">
-                Ability bonuses: {ABILITIES.map((ability) => `${ABILITY_LABEL[ability]} ${race.abilityBonuses?.[ability] ?? 0 > 0 ? `+${race.abilityBonuses?.[ability] ?? 0}` : '+0'}`).join(', ')}
+                Ability bonuses:{' '}
+                {ABILITIES.map((ability) => {
+                  const bonus = race.abilityBonuses?.[ability] ?? 0;
+                  return `${ABILITY_LABEL[ability]} ${bonus >= 0 ? `+${bonus}` : bonus}`;
+                }).join(', ')}
               </p>
             </div>
 
