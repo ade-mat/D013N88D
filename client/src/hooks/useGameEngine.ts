@@ -25,7 +25,6 @@ import {
   CheckRollResult,
   CheckRollOptions,
   formatCheckSummary,
-  getSkillAbility,
   rollAbilityCheck
 } from '@/utils/dice';
 
@@ -432,8 +431,7 @@ export const useGameEngine = (remoteCampaign: Campaign | null): GameEngine => {
       }
 
       if (choice.skillCheck) {
-        const updatedHero = handleSkillCheck(choice, hero);
-        setHero(updatedHero);
+        handleSkillCheck(choice, hero);
       }
     },
     [appendLog, applyOutcome, currentScene, handleSkillCheck, hero]

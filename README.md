@@ -98,6 +98,6 @@ The container listens on port `8080` to align with App Engine / Cloud Run defaul
 
 ## Notes
 
-- Saves persist in local storage (`emberfall-ascent-save-v1`). Use **Reset Save** on the setup screen to clear.
+- Saves persist in local storage (`emberfall-ascent-save-v2`). Use **Reset Save** on the setup screen to clear.
 - The NPC oracle is deterministic and runs entirely locally—no external AI service required.
 - When deploying to GCP (App Engine or Cloud Run), build the container and push to a registry; the server will serve both the API and static client content.

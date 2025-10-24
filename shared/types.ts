@@ -6,8 +6,6 @@ export type Ability =
   | 'wisdom'
   | 'charisma';
 
-export type CoreResource = 'hitPoints' | 'tempHitPoints' | 'inspiration';
-
 export type Skill =
   | 'acrobatics'
   | 'animalHandling'

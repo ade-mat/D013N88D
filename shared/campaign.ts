@@ -7,60 +7,9 @@ export const campaignData: Campaign = {
     'A lone hero races through the fractured city of Emberfall to reclaim the Heart of Embers before the floating spire collapses and consumes the city in astral fire.',
   introSceneId: 'intro_arrival',
   guidance: [
-    'Your hero carries four core attributes. Scenes will call for skill checks using these values.',
-    'Success and failure both drive the story forward; lean into the complications that arise.',
-    'Track allies and boons—they can shift later encounters or unlock new resolutions.',
-    'Stress and wounds increase dc while influence and corruption change the finale tone.'
-  ],
-  archetypes: [
-    {
-      id: 'envoy',
-      name: 'Skilled Envoy',
-      summary: 'A deft negotiator and agile infiltrator with contacts across Emberfall.',
-      description:
-        'Poised and quick-witted, the Envoy navigates crises through charm, agility, and precision. Years spent as Emberfall’s unofficial fixer grant access to covert routes and favors.',
-      focus: 'finesse',
-      attributes: {
-        might: 1,
-        finesse: 4,
-        insight: 3,
-        resolve: 2
-      },
-      startingAbilities: ['Silver Tongue', 'Shadowstep'],
-      startingInventory: ['Ciphered Signet', 'Smoke Vials']
-    },
-    {
-      id: 'adept',
-      name: 'Arcane Adept',
-      summary: 'A scholar of astral currents wielding sigils and runic insight.',
-      description:
-        'The Adept deciphers arcane locks and bends etheric forces with practiced discipline. Exposure to the Heart of Embers grants uncanny sensitivity to corruption.',
-      focus: 'insight',
-      attributes: {
-        might: 1,
-        finesse: 2,
-        insight: 4,
-        resolve: 3
-      },
-      startingAbilities: ['Runesight', 'Astral Ward'],
-      startingInventory: ['Glyph-etched Grimoire', 'Resonant Focus']
-    },
-    {
-      id: 'vanguard',
-      name: 'Iron Vanguard',
-      summary: 'A battle-tested guardian bearing heavy mail and unwavering resolve.',
-      description:
-        'Forged in the Emberfall garrison, the Vanguard channels raw strength and stalwart presence. When chaos erupts, the Vanguard stands between the city and ruin.',
-      focus: 'might',
-      attributes: {
-        might: 4,
-        finesse: 2,
-        insight: 1,
-        resolve: 3
-      },
-      startingAbilities: ['Bulwark Stance', 'Hammer of the Dawn'],
-      startingInventory: ['Runic Shield', 'Shock Gauntlet']
-    }
+    'Create your hero with full D&D flavor—pick a race, class, and background, then assign ability scores.',
+    'Checks roll a d20 plus ability modifiers and proficiency when appropriate; advantage and disadvantage still apply.',
+    'Status tracks like stress, wounds, influence, and corruption evolve through play and colour the finale.'
   ],
   scenes: [
     {
