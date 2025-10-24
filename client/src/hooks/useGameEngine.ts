@@ -3,6 +3,7 @@ import type {
   Ability,
   Campaign,
   ConversationTurn,
+  GameStateSnapshot,
   HeroResources,
   HeroState,
   LogEntry,
@@ -28,15 +29,44 @@ import {
   rollAbilityCheck
 } from '@/utils/dice';
 
-interface StoredState {
-  hero: HeroState | null;
-  currentSceneId: string | null;
-  log: LogEntry[];
-  visitedScenes: Record<string, number>;
-  conversation: Record<string, ConversationTurn[]>;
-}
+export type StoredState = GameStateSnapshot;
 
 const LOCAL_STORAGE_KEY = 'emberfall-ascent-save-v2';
+
+export interface GamePersistence {
+  load: () => Promise<StoredState | null>;
+  save: (state: StoredState) => Promise<void>;
+  clear: () => Promise<void>;
+}
+
+const createLocalStoragePersistence = (): GamePersistence => ({
+  async load() {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    const stored = window.localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (!stored) {
+      return null;
+    }
+    try {
+      return JSON.parse(stored) as StoredState;
+    } catch {
+      return null;
+    }
+  },
+  async save(state) {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+  },
+  async clear() {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    window.localStorage.removeItem(LOCAL_STORAGE_KEY);
+  }
+});
 
 const buildLogEntry = (
   type: LogEntry['type'],
@@ -297,7 +327,10 @@ export interface GameEngine {
   abilityMod: (ability: Ability) => number;
 }
 
-export const useGameEngine = (remoteCampaign: Campaign | null): GameEngine => {
+export const useGameEngine = (
+  remoteCampaign: Campaign | null,
+  persistence?: GamePersistence
+): GameEngine => {
   const campaign = remoteCampaign ?? campaignData;
 
   const [hero, setHero] = useState<HeroState | null>(null);
@@ -312,6 +345,10 @@ export const useGameEngine = (remoteCampaign: Campaign | null): GameEngine => {
   >({});
   const [hasLoaded, setHasLoaded] = useState(false);
   const lastSceneIdRef = useRef<string | null>(null);
+  const persistenceImpl = useMemo(
+    () => persistence ?? createLocalStoragePersistence(),
+    [persistence]
+  );
 
   const currentScene = useMemo(
     () => getScene(campaign, currentSceneId),
@@ -326,16 +363,6 @@ export const useGameEngine = (remoteCampaign: Campaign | null): GameEngine => {
       return getAbilityModifier(hero.abilityScores[ability]);
     },
     [hero]
-  );
-
-  const persistState = useCallback(
-    (nextState: StoredState) => {
-      if (typeof window === 'undefined') {
-        return;
-      }
-      window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(nextState));
-    },
-    []
   );
 
   const appendLog = useCallback((entry: LogEntry) => {
@@ -465,10 +492,11 @@ export const useGameEngine = (remoteCampaign: Campaign | null): GameEngine => {
     setLastRoll(null);
     setCurrentSceneId(campaign.introSceneId);
     lastSceneIdRef.current = null;
-    if (typeof window !== 'undefined') {
-      window.localStorage.removeItem(LOCAL_STORAGE_KEY);
-    }
-  }, [campaign.introSceneId]);
+    void persistenceImpl.clear().catch((err) => {
+      // eslint-disable-next-line no-console
+      console.warn('Failed to clear game state', err);
+    });
+  }, [campaign.introSceneId, persistenceImpl]);
 
   const recordPlayerConversation = useCallback((npcId: string, text: string) => {
     setConversation((prev) => {
@@ -491,41 +519,80 @@ export const useGameEngine = (remoteCampaign: Campaign | null): GameEngine => {
   }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || hasLoaded) {
+    setHasLoaded((prev) => (prev ? false : prev));
+  }, [persistenceImpl]);
+
+  useEffect(() => {
+    if (hasLoaded) {
       return;
     }
 
-    const stored = window.localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (stored) {
+    let cancelled = false;
+
+    const loadState = async () => {
       try {
-        const parsed = JSON.parse(stored) as StoredState;
-        if (parsed.hero) {
-          setHero(parsed.hero);
+        const stored = await persistenceImpl.load();
+        if (cancelled) {
+          return;
         }
-        setCurrentSceneId(parsed.currentSceneId ?? campaign.introSceneId);
-        setLog(parsed.log ?? []);
-        setVisitedScenes(parsed.visitedScenes ?? {});
-        setConversation(parsed.conversation ?? {});
-      } catch {
-        // swallow malformed saves
+        if (stored) {
+          setHero(stored.hero ?? null);
+          setCurrentSceneId(stored.currentSceneId ?? campaign.introSceneId);
+          setLog(stored.log ?? []);
+          setVisitedScenes(stored.visitedScenes ?? {});
+          setConversation(stored.conversation ?? {});
+        } else {
+          setHero(null);
+          setCurrentSceneId(campaign.introSceneId);
+          setLog([]);
+          setVisitedScenes({});
+          setConversation({});
+        }
+      } catch (err) {
+        if (!cancelled) {
+          // eslint-disable-next-line no-console
+          console.warn('Failed to load game state', err);
+        }
+      } finally {
+        if (!cancelled) {
+          setHasLoaded(true);
+        }
       }
-    }
-    setHasLoaded(true);
-  }, [campaign.introSceneId, hasLoaded]);
+    };
+
+    void loadState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [campaign.introSceneId, hasLoaded, persistenceImpl]);
 
   useEffect(() => {
     if (!hasLoaded) {
       return;
     }
 
-    persistState({
+    const state: StoredState = {
       hero,
       currentSceneId,
       log,
       visitedScenes,
       conversation
+    };
+
+    void persistenceImpl.save(state).catch((err) => {
+      // eslint-disable-next-line no-console
+      console.warn('Failed to persist game state', err);
     });
-  }, [conversation, currentSceneId, hero, log, persistState, visitedScenes, hasLoaded]);
+  }, [
+    conversation,
+    currentSceneId,
+    hero,
+    log,
+    persistenceImpl,
+    visitedScenes,
+    hasLoaded
+  ]);
 
   useEffect(() => {
     if (!hero || !currentSceneId) {

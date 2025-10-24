@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { campaignData } from '../../shared/campaign.js';
 import type { Campaign } from '../../shared/types.js';
 import { createOracleResponse } from './lib/npcOracle.js';
+import progressRouter from './routes/progress.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -64,6 +65,8 @@ app.post('/api/oracle', (req, res) => {
 
   res.json({ reply });
 });
+
+app.use('/api/progress', progressRouter);
 
 const clientDistCandidates = [
   path.resolve(__dirname, '../../../client/dist'),

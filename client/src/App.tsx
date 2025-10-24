@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { GameProvider, useGame } from '@/context/GameContext';
 import CharacterCreator from '@/components/CharacterCreator';
 import SceneView from '@/components/SceneView';
@@ -7,16 +7,24 @@ import LogPanel from '@/components/LogPanel';
 import Epilogue from '@/components/Epilogue';
 import ConversationPanel from '@/components/ConversationPanel';
 import DiceTray from '@/components/DiceTray';
+import AuthPanel from '@/components/AuthPanel';
+import { useAuth } from '@/context/AuthContext';
 import type { Campaign } from '@/types';
 import { campaignData } from '@shared/campaign';
 import { CLASS_DEFINITIONS, RACE_DEFINITIONS, BACKGROUND_DEFINITIONS } from '@shared/referenceData';
 
 const GameShell = ({
   isFetching,
-  error
+  error,
+  accountEmail,
+  onSignOut,
+  authNotice
 }: {
   isFetching: boolean;
   error: string | null;
+  accountEmail?: string | null;
+  onSignOut?: () => void;
+  authNotice?: string | null;
 }) => {
   const { campaign, hero, currentScene, isGameComplete } = useGame();
 
@@ -28,60 +36,83 @@ const GameShell = ({
     ? BACKGROUND_DEFINITIONS.find((entry) => entry.id === hero.backgroundId)
     : null;
 
+  let body: JSX.Element;
+  let overlay: JSX.Element | null = null;
+
   if (!hero) {
-    return (
-      <div className="app-shell">
-        {error && <div className="banner warning">{error}</div>}
+    body = (
+      <>
         <CharacterCreator />
         {isFetching && <div className="loading-indicator">Syncing campaign data…</div>}
-      </div>
+      </>
     );
-  }
+  } else if (isGameComplete) {
+    body = <Epilogue />;
+  } else {
+    body = (
+      <>
+        <header className="game-header">
+          <div>
+            <h1>{campaign.title}</h1>
+            <p>{campaign.synopsis}</p>
+          </div>
+          <div className="game-hero">
+            <span>{hero.name}</span>
+            <strong>
+              {klass?.name ?? 'Adventurer'} • {race?.name ?? 'Unknown'} • {background?.name ?? 'Wanderer'}
+            </strong>
+          </div>
+        </header>
 
-  if (isGameComplete) {
-    return (
-      <div className="app-shell">
-        {error && <div className="banner warning">{error}</div>}
-        <Epilogue />
-      </div>
+        <main className="game-layout">
+          <section className="primary-panel">
+            {currentScene ? (
+              <SceneView scene={currentScene} />
+            ) : (
+              <div className="scene-container">
+                <p>No scene loaded.</p>
+              </div>
+            )}
+          </section>
+          <section className="secondary-panel">
+            <Sidebar />
+            <ConversationPanel />
+            <DiceTray />
+            <LogPanel />
+          </section>
+        </main>
+      </>
     );
+
+    if (isFetching) {
+      overlay = (
+        <div className="loading-indicator overlay">Syncing campaign data…</div>
+      );
+    }
   }
 
   return (
     <div className="app-shell">
-      {error && <div className="banner warning">{error}</div>}
-      <header className="game-header">
-        <div>
-          <h1>{campaign.title}</h1>
-          <p>{campaign.synopsis}</p>
-        </div>
-        <div className="game-hero">
-          <span>{hero.name}</span>
-          <strong>
-            {klass?.name ?? 'Adventurer'} • {race?.name ?? 'Unknown'} • {background?.name ?? 'Wanderer'}
-          </strong>
-        </div>
-      </header>
-
-      <main className="game-layout">
-        <section className="primary-panel">
-          {currentScene ? (
-            <SceneView scene={currentScene} />
-          ) : (
-            <div className="scene-container">
-              <p>No scene loaded.</p>
-            </div>
+      {accountEmail && (
+        <div className="account-banner">
+          <span>
+            Signed in as <strong>{accountEmail}</strong>
+          </span>
+          {onSignOut && (
+            <button
+              type="button"
+              className="account-banner__signout"
+              onClick={onSignOut}
+            >
+              Sign out
+            </button>
           )}
-        </section>
-        <section className="secondary-panel">
-          <Sidebar />
-          <ConversationPanel />
-          <DiceTray />
-          <LogPanel />
-        </section>
-      </main>
-
-      {isFetching && <div className="loading-indicator overlay">Syncing campaign data…</div>}
+        </div>
+      )}
+      {authNotice && <div className="banner info">{authNotice}</div>}
+      {error && <div className="banner warning">{error}</div>}
+      {body}
+      {overlay}
     </div>
   );
 };
@@ -90,6 +121,8 @@ const App = () => {
   const [campaign, setCampaign] = useState<Campaign | null>(campaignData);
   const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [guestMode, setGuestMode] = useState(false);
+  const { user, initializing, authAvailable, signOut } = useAuth();
 
   useEffect(() => {
     let isMounted = true;
@@ -121,9 +154,57 @@ const App = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      setGuestMode(false);
+    }
+  }, [user]);
+
+  const handleSkipAuth = useCallback(() => {
+    setGuestMode(true);
+  }, []);
+
+  const handleSignOut = useCallback(async () => {
+    try {
+      await signOut();
+    } finally {
+      setGuestMode(false);
+    }
+  }, [signOut]);
+
+  const accountEmail = user?.email ?? user?.uid ?? null;
+  const authNotice = !authAvailable
+    ? 'Authentication is not configured. Progress will be stored locally on this device.'
+    : !user && guestMode
+      ? 'Guest mode active — progress stays on this device.'
+      : null;
+
+  if (initializing) {
+    return (
+      <div className="app-shell">
+        <div className="loading-indicator">Loading account…</div>
+      </div>
+    );
+  }
+
+  if (authAvailable && !user && !guestMode) {
+    return (
+      <div className="app-shell">
+        {error && <div className="banner warning">{error}</div>}
+        <AuthPanel onSkip={handleSkipAuth} />
+      </div>
+    );
+  }
+
   return (
     <GameProvider campaign={campaign}>
-      <GameShell isFetching={isFetching} error={error} />
+      <GameShell
+        isFetching={isFetching}
+        error={error}
+        accountEmail={accountEmail}
+        onSignOut={user ? handleSignOut : undefined}
+        authNotice={authNotice}
+      />
     </GameProvider>
   );
 };

@@ -8,3 +8,5 @@ server/dist
 coverage
 *.log
 dnd-general
+client/.env.local
+server/firebase-service-account.local.json

@@ -175,3 +175,11 @@ export interface ConversationTurn {
   speaker: 'player' | 'npc';
   text: string;
 }
+
+export interface GameStateSnapshot {
+  hero: HeroState | null;
+  currentSceneId: string | null;
+  log: LogEntry[];
+  visitedScenes: Record<string, number>;
+  conversation: Record<string, ConversationTurn[]>;
+}

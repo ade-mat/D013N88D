@@ -68,9 +68,22 @@ jobs:
           echo "Built image: ${IMAGE_URI}"
 
       - name: Build container image
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
         run: |
           docker build \
             --tag "${IMAGE_URI}" \
+            --build-arg VITE_FIREBASE_API_KEY="${VITE_FIREBASE_API_KEY}" \
+            --build-arg VITE_FIREBASE_AUTH_DOMAIN="${VITE_FIREBASE_AUTH_DOMAIN}" \
+            --build-arg VITE_FIREBASE_PROJECT_ID="${VITE_FIREBASE_PROJECT_ID}" \
+            --build-arg VITE_FIREBASE_STORAGE_BUCKET="${VITE_FIREBASE_STORAGE_BUCKET}" \
+            --build-arg VITE_FIREBASE_MESSAGING_SENDER_ID="${VITE_FIREBASE_MESSAGING_SENDER_ID}" \
+            --build-arg VITE_FIREBASE_APP_ID="${VITE_FIREBASE_APP_ID}" \
             --file Dockerfile \
             .
 
@@ -80,8 +93,8 @@ jobs:
 
       - name: Deploy to Cloud Run
         env:
-          IAP_CLIENT_ID: ${{ secrets.IAP_CLIENT_ID }}
-          IAP_CLIENT_SECRET: ${{ secrets.IAP_CLIENT_SECRET }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_PROJECT_ID_SECRET: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
         run: |
           gcloud beta run deploy "${CLOUD_RUN_SERVICE}" \
             --image="${IMAGE_URI}" \
@@ -92,6 +105,8 @@ jobs:
             --scaling=auto \
             --network=default \
             --subnet=default \
+            --set-env-vars "FIREBASE_SERVICE_ACCOUNT=${FIREBASE_SERVICE_ACCOUNT}" \
+            --set-env-vars "FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID_SECRET}" \
             --quiet
 
           gcloud run services add-iam-policy-binding "${CLOUD_RUN_SERVICE}" \
