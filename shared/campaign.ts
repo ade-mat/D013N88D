@@ -52,7 +52,7 @@ export const campaignData: Campaign = {
           id: 'intro_report_thorne',
           label: 'Report to Captain Marek Thorne to secure official support.',
           skillCheck: {
-            attribute: 'charisma',
+            ability: 'charisma',
             skill: 'persuasion',
             dc: 14,
             advantageIfFlag: 'met_seraphine',
@@ -96,7 +96,7 @@ export const campaignData: Campaign = {
           id: 'seraphine_vision',
           label: 'Accept a guided vision of the spire.',
           skillCheck: {
-            attribute: 'wisdom',
+            ability: 'wisdom',
             skill: 'insight',
             dc: 13,
             success: {
@@ -125,7 +125,7 @@ export const campaignData: Campaign = {
           id: 'seraphine_divination',
           label: 'Request a warded charm to shield against corruption.',
           skillCheck: {
-            attribute: 'charisma',
+            ability: 'charisma',
             skill: 'persuasion',
             dc: 12,
             success: {
@@ -174,7 +174,7 @@ export const campaignData: Campaign = {
           id: 'tamsin_gadget',
           label: 'Test a repulsor rig for vertical traversal.',
           skillCheck: {
-            attribute: 'dexterity',
+            ability: 'dexterity',
             skill: 'sleightOfHand',
             dc: 12,
             success: {
@@ -215,7 +215,7 @@ export const campaignData: Campaign = {
           id: 'tamsin_static',
           label: 'Ask Tamsin to rig a stun charge in case of trouble.',
           skillCheck: {
-            attribute: 'intelligence',
+            ability: 'intelligence',
             skill: 'arcana',
             dc: 11,
             success: {
@@ -268,7 +268,7 @@ export const campaignData: Campaign = {
           id: 'throne_warn',
           label: 'Warn Thorne about astral backlash you sensed in the Heart.',
           skillCheck: {
-            attribute: 'wisdom',
+            ability: 'wisdom',
             skill: 'insight',
             dc: 13,
             success: {
@@ -313,7 +313,7 @@ export const campaignData: Campaign = {
           id: 'marek_slip',
           label: 'Slip the tail using market stalls.',
           skillCheck: {
-            attribute: 'dexterity',
+            ability: 'dexterity',
             skill: 'stealth',
             dc: 13,
             success: {
@@ -340,7 +340,7 @@ export const campaignData: Campaign = {
           id: 'marek_confront',
           label: 'Confront the sentinels with raw determination.',
           skillCheck: {
-            attribute: 'charisma',
+            ability: 'charisma',
             skill: 'intimidation',
             dc: 12,
             success: {
@@ -369,7 +369,7 @@ export const campaignData: Campaign = {
           label: 'Use a forged signal flare to divert them.',
           requiresFlag: 'met_tamsin',
           skillCheck: {
-            attribute: 'intelligence',
+            ability: 'intelligence',
             skill: 'investigation',
             dc: 11,
             success: {
@@ -404,7 +404,7 @@ export const campaignData: Campaign = {
           id: 'crossroads_aid_civilians',
           label: 'Aid trapped civilians to earn their trust.',
           skillCheck: {
-            attribute: 'strength',
+            ability: 'strength',
             skill: 'athletics',
             dc: 12,
             success: {
@@ -432,7 +432,7 @@ export const campaignData: Campaign = {
           label: 'Consult a tethered spirit lingering near the spire lift.',
           requiresFlag: 'met_seraphine',
           skillCheck: {
-            attribute: 'wisdom',
+            ability: 'wisdom',
             skill: 'religion',
             dc: 12,
             success: {
@@ -477,7 +477,7 @@ export const campaignData: Campaign = {
           id: 'approach_ritual_lift',
           label: 'Attempt to stabilize the ritual elevator.',
           skillCheck: {
-            attribute: 'intelligence',
+            ability: 'intelligence',
             skill: 'arcana',
             dc: 14,
             advantageIfFlag: 'met_seraphine',
@@ -506,7 +506,7 @@ export const campaignData: Campaign = {
           id: 'approach_maintenance',
           label: 'Climb the maintenance shaft Tamsin described.',
           skillCheck: {
-            attribute: 'dexterity',
+            ability: 'dexterity',
             skill: 'acrobatics',
             dc: 13,
             advantageIfFlag: 'vertical_advantage',
@@ -556,7 +556,7 @@ export const campaignData: Campaign = {
           id: 'lift_override',
           label: 'Force a restart through the control glyphs.',
           skillCheck: {
-            attribute: 'intelligence',
+            ability: 'intelligence',
             skill: 'arcana',
             dc: 14,
             success: {
@@ -613,7 +613,7 @@ export const campaignData: Campaign = {
           id: 'shaft_silent',
           label: 'Move silently between the conduits.',
           skillCheck: {
-            attribute: 'dexterity',
+            ability: 'dexterity',
             skill: 'stealth',
             dc: 13,
             success: {
@@ -640,7 +640,7 @@ export const campaignData: Campaign = {
           id: 'shaft_force',
           label: 'Smash through an obstructing maintenance door.',
           skillCheck: {
-            attribute: 'strength',
+            ability: 'strength',
             skill: 'athletics',
             dc: 13,
             success: {
@@ -701,7 +701,7 @@ export const campaignData: Campaign = {
           id: 'sentry_duel',
           label: 'Fight through the sentries with brute force.',
           skillCheck: {
-            attribute: 'strength',
+            ability: 'strength',
             skill: 'athletics',
             dc: 14,
             success: {
@@ -728,7 +728,7 @@ export const campaignData: Campaign = {
           id: 'sentry_hack',
           label: 'Attempt to hack their command protocols mid-combat.',
           skillCheck: {
-            attribute: 'intelligence',
+            ability: 'intelligence',
             skill: 'arcana',
             dc: 15,
             success: {
@@ -767,7 +767,7 @@ export const campaignData: Campaign = {
           id: 'nerrix_free',
           label: 'Disable the containment rune lattice.',
           skillCheck: {
-            attribute: 'intelligence',
+            ability: 'intelligence',
             skill: 'arcana',
             dc: 13,
             success: {
@@ -796,7 +796,7 @@ export const campaignData: Campaign = {
           id: 'nerrix_bargain',
           label: 'Bargain with Nerrix for intel in exchange for later rescue.',
           skillCheck: {
-            attribute: 'charisma',
+            ability: 'charisma',
             skill: 'persuasion',
             dc: 12,
             success: {
@@ -842,7 +842,7 @@ export const campaignData: Campaign = {
           id: 'midway_assess',
           label: 'Assess the plaza for hazards and opportunities.',
           skillCheck: {
-            attribute: 'wisdom',
+            ability: 'wisdom',
             skill: 'perception',
             dc: 12,
             success: {
@@ -928,7 +928,7 @@ export const campaignData: Campaign = {
           id: 'antechamber_listen',
           label: 'Listen to the whispers to glean Lirael’s state.',
           skillCheck: {
-            attribute: 'wisdom',
+            ability: 'wisdom',
             skill: 'insight',
             dc: 14,
             success: {
@@ -963,7 +963,7 @@ export const campaignData: Campaign = {
           id: 'heart_cleanse',
           label: 'Attempt to cleanse the Heart and restore Lirael.',
           skillCheck: {
-            attribute: 'charisma',
+            ability: 'charisma',
             skill: 'persuasion',
             dc: 15,
             advantageIfFlag: 'empathized_lirael',
@@ -993,7 +993,7 @@ export const campaignData: Campaign = {
           id: 'heart_bargain',
           label: 'Bargain with the Heart, offering to bear its burden.',
           skillCheck: {
-            attribute: 'wisdom',
+            ability: 'wisdom',
             skill: 'religion',
             dc: 15,
             success: {
@@ -1022,7 +1022,7 @@ export const campaignData: Campaign = {
           id: 'heart_shatter',
           label: 'Shatter the Heart to prevent catastrophic corruption.',
           skillCheck: {
-            attribute: 'strength',
+            ability: 'strength',
             skill: 'athletics',
             dc: 16,
             success: {
@@ -1059,7 +1059,7 @@ export const campaignData: Campaign = {
           id: 'escape_dash',
           label: 'Sprint through falling debris.',
           skillCheck: {
-            attribute: 'dexterity',
+            ability: 'dexterity',
             skill: 'acrobatics',
             dc: 14,
             advantageIfFlag: 'stealth_route',

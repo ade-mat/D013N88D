@@ -548,14 +548,15 @@ export const useGameEngine = (remoteCampaign: Campaign | null): GameEngine => {
       [scene.id]: (prev[scene.id] ?? 0) + 1
     }));
 
-    if (scene.onEnter) {
+    const onEnter = scene.onEnter;
+    if (onEnter) {
       setHero((prevHero) => {
         if (!prevHero) {
           return prevHero;
         }
-        const nextHero = applyEffect(prevHero, scene.onEnter);
-        if (scene.onEnter.notes && scene.onEnter.notes.length > 0) {
-          scene.onEnter.notes.forEach((note) =>
+        const nextHero = applyEffect(prevHero, onEnter);
+        if (onEnter.notes && onEnter.notes.length > 0) {
+          onEnter.notes.forEach((note) =>
             appendLog(buildLogEntry('narration', 'Insight', note))
           );
         }
