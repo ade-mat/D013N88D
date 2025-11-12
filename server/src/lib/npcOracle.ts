@@ -91,7 +91,10 @@ export const createOracleResponse = (
   hero: HeroSnapshot
 ): string => {
   const responder = npcResponders[npcId];
-  if (!responder) {
+  if (
+    !Object.prototype.hasOwnProperty.call(npcResponders, npcId) ||
+    typeof responder !== 'function'
+  ) {
     return `The link crackles without response. (NPC "${npcId}" is unavailable.)`;
   }
 
