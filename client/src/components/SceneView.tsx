@@ -14,7 +14,7 @@ interface SceneViewProps {
 }
 
 const SceneView = ({ scene }: SceneViewProps) => {
-  const { hero, chooseOption, lastRoll } = useGame();
+  const { hero, chooseOption, lastRoll, pendingSkillCheck } = useGame();
 
   const options = useMemo<AugmentedChoice[]>(() => {
     return scene.options.map((option) => {
@@ -51,6 +51,19 @@ const SceneView = ({ scene }: SceneViewProps) => {
     );
   };
 
+  const pendingBanner = pendingSkillCheck ? (
+    <div className="pending-check-banner">
+      <strong>Manual roll required:</strong>{' '}
+      <span>
+        Resolve the{' '}
+        {pendingSkillCheck.skill
+          ? `${SKILLS.find((entry) => entry.id === pendingSkillCheck.skill)?.label ?? 'Skill'}`
+          : ABILITY_LABEL[pendingSkillCheck.ability]}
+        {' '}check (DC {pendingSkillCheck.dc}) in the Dice Tray before choosing another action.
+      </span>
+    </div>
+  ) : null;
+
   return (
     <div className="scene-container">
       <header className="scene-header">
@@ -59,6 +72,8 @@ const SceneView = ({ scene }: SceneViewProps) => {
       <div className="scene-narrative">
         <p>{scene.narrative}</p>
       </div>
+
+      {pendingBanner}
 
       {lastRoll && (
         <div className={`roll-summary ${lastRoll.success ? 'success' : 'failure'}`}>
@@ -85,7 +100,7 @@ const SceneView = ({ scene }: SceneViewProps) => {
               key={option.id}
               type="button"
               className="choice-card"
-              disabled={!option.isEnabled}
+              disabled={!option.isEnabled || Boolean(pendingSkillCheck)}
               onClick={() => chooseOption(option.id)}
             >
               <div className="choice-content">
