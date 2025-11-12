@@ -1,4 +1,6 @@
 import { Router } from 'express';
+// Rate limiting middleware
+import rateLimit from 'express-rate-limit';
 import type { GameStateSnapshot } from '../../../shared/types.js';
 import {
   getFirestore,
@@ -13,7 +15,6 @@ interface ProgressDocument {
 }
 
 const router = Router();
-const collectionName = process.env.FIREBASE_PROGRESS_COLLECTION ?? 'gameProgress';
 
 const isValidState = (candidate: unknown): candidate is GameStateSnapshot => {
   if (!candidate || typeof candidate !== 'object') {
@@ -29,7 +30,6 @@ const isValidState = (candidate: unknown): candidate is GameStateSnapshot => {
 };
 
 router.use(requireFirebaseAuth);
-
 router.get('/', async (req, res) => {
   if (!isFirebaseAdminReady()) {
     return res.status(503).json({ error: 'Persistence backend unavailable.' });
