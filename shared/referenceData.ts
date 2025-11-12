@@ -37,9 +37,9 @@ export const CLASS_DEFINITIONS: ClassDefinition[] = [
     hitDie: 10,
     primaryAbilities: ['strength', 'constitution'],
     savingThrows: ['strength', 'constitution'],
-    armorProficiencies: ['All armour', 'Shields'],
+    armorProficiencies: ['Light armour', 'Medium armour', 'Heavy armour', 'Shields'],
     weaponProficiencies: ['Simple weapons', 'Martial weapons'],
-    toolProficiencies: [],
+    toolProficiencies: ['Smith’s tools', 'Vehicles (land)'],
     skillOptions: ['acrobatics', 'animalHandling', 'athletics', 'history', 'insight', 'perception', 'survival'],
     skillChoices: 2,
     startingEquipment: [
@@ -48,7 +48,7 @@ export const CLASS_DEFINITIONS: ClassDefinition[] = [
       'Light crossbow and 20 bolts or two handaxes',
       'Dungeoneer’s pack or Explorer’s pack'
     ],
-    features: ['Fighting Style', 'Second Wind']
+    features: ['Combat Versatility', 'Second Wind']
   },
   {
     id: 'rogue',
@@ -56,9 +56,9 @@ export const CLASS_DEFINITIONS: ClassDefinition[] = [
     hitDie: 8,
     primaryAbilities: ['dexterity'],
     savingThrows: ['dexterity', 'intelligence'],
-    armorProficiencies: ['Light armour'],
-    weaponProficiencies: ['Simple weapons', 'Hand crossbows', 'Longswords', 'Rapiers', 'Shortswords'],
-    toolProficiencies: ['Thieves’ tools'],
+    armorProficiencies: ['Light armour', 'Medium armour (no shields)'],
+    weaponProficiencies: ['Simple weapons', 'Hand crossbows', 'Longswords', 'Rapiers', 'Shortswords', 'Shortbows'],
+    toolProficiencies: ['Thieves’ tools', 'Disguise kit'],
     skillOptions: ['acrobatics', 'athletics', 'deception', 'insight', 'intimidation', 'investigation', 'perception', 'performance', 'persuasion', 'sleightOfHand', 'stealth'],
     skillChoices: 4,
     startingEquipment: [
@@ -67,23 +67,24 @@ export const CLASS_DEFINITIONS: ClassDefinition[] = [
       'Burglar’s pack, Dungeoneer’s pack, or Explorer’s pack',
       'Leather armour, two daggers, and thieves’ tools'
     ],
-    features: ['Expertise', 'Sneak Attack', 'Thieves’ Cant']
+    features: ['Expertise', 'Sneak Attack', 'Cunning Action']
   },
   {
     id: 'wizard',
     name: 'Wizard',
-    hitDie: 6,
+    hitDie: 8,
     primaryAbilities: ['intelligence'],
     savingThrows: ['intelligence', 'wisdom'],
-    armorProficiencies: [],
-    weaponProficiencies: ['Daggers', 'Darts', 'Slings', 'Quarterstaffs', 'Light crossbows'],
-    toolProficiencies: [],
+    armorProficiencies: ['Light armour (mageweave)'],
+    weaponProficiencies: ['Simple weapons', 'Daggers', 'Quarterstaffs', 'Light crossbows'],
+    toolProficiencies: ['Calligrapher’s supplies', 'Alchemist’s supplies'],
     skillOptions: ['arcana', 'history', 'insight', 'investigation', 'medicine', 'religion'],
     skillChoices: 2,
     startingEquipment: [
       'Quarterstaff or dagger',
       'Component pouch or arcane focus',
       'Scholar’s pack or Explorer’s pack',
+      'Mageweave mantle (counts as light armour)',
       'Spellbook'
     ],
     features: ['Spellcasting', 'Arcane Recovery'],
@@ -96,8 +97,8 @@ export const CLASS_DEFINITIONS: ClassDefinition[] = [
     primaryAbilities: ['wisdom'],
     savingThrows: ['wisdom', 'charisma'],
     armorProficiencies: ['Light armour', 'Medium armour', 'Shields'],
-    weaponProficiencies: ['Simple weapons'],
-    toolProficiencies: [],
+    weaponProficiencies: ['Simple weapons', 'Martial weapons (favoured by domain)'],
+    toolProficiencies: ['Herbalism kit'],
     skillOptions: ['history', 'insight', 'medicine', 'persuasion', 'religion'],
     skillChoices: 2,
     startingEquipment: [
@@ -119,10 +120,7 @@ export const RACE_DEFINITIONS: RaceDefinition[] = [
     abilityBonuses: {
       strength: 1,
       dexterity: 1,
-      constitution: 1,
-      intelligence: 1,
-      wisdom: 1,
-      charisma: 1
+      wisdom: 1
     },
     speed: 30,
     size: 'Medium',
@@ -142,7 +140,7 @@ export const RACE_DEFINITIONS: RaceDefinition[] = [
   {
     id: 'dwarf',
     name: 'Hill Dwarf',
-    abilityBonuses: { constitution: 2, wisdom: 1 },
+    abilityBonuses: { constitution: 2, strength: 1 },
     speed: 25,
     size: 'Medium',
     traits: ['Darkvision', 'Dwarven Resilience', 'Dwarven Combat Training', 'Stonecunning'],
