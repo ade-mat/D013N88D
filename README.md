@@ -1,128 +1,141 @@
 # Emberfall Ascent – Solo D&D Web Adventure
 
-Emberfall Ascent is a single-player narrative RPG inspired by tabletop D&D. Build a lone hero with authentic 5e-style character creation, roll dynamic skill checks, and guide them through a three-act campaign to reclaim the Heart of Embers before the floating spire collapses on the city below.
+Emberfall Ascent is a single-player narrative RPG inspired by tabletop D&D. Build a lone hero with authentic 5e-style character creation, roll ability checks against dynamic DCs, and guide them through a three-act campaign to reclaim the Heart of Embers before the floating spire collapses on the city below.
 
-## Campaign Highlights
+## Campaign & Feature Highlights
 
-- **Setting:** Emberfall, a cliffside city beneath a shattered astral spire.
-- **Runtime:** Designed for a focused 1–2 hour session with branching scenes and multiple endings.
-- **Acts & Stakes:** Rally allies in the fracturing city, ascend the unstable spire, and confront (or redeem) the corrupted guardian Lirael.
-- **Allies & Conversations:** Meet Seraphine, Tamsin, Marek, Nerrix, and more. You can chat with allies through the in-app “Allied Channel” powered by a lightweight oracle service.
-- **Systems:** Attribute-driven skill checks (d20 + stat vs DC), inventory boons, consequence tracking (stress, wounds, influence, corruption), optional AI-style NPC banter.
+- **Setting & stakes:** Emberfall is a cliffside city beneath a shattered astral spire. Each act pushes you closer to stabilising (or shattering) the Heart while the city fractures around you.
+- **5e-style hero builder:** Choose a race, class, and background, allocate ability scores, pick proficiencies, and automatically derive armor class, speed, equipment, and features from shared reference data.
+- **Scene engine:** Story nodes, branching choices, and consequence tracking live in `shared/`. Ability checks (d20 + modifiers) can adjust stress, wounds, influence, and corruption, unlock allies, or change endings.
+- **Allied Channel:** The in-app conversation panel lets you message Seraphine, Tamsin, Marek, Nerrix, or Lirael. The server-side oracle (`POST /api/oracle`) crafts responses based on the hero’s flags/status, and the client falls back to scripted dialogue if the endpoint is offline.
+- **Dice Tray & Log:** Quick dice formulas, combat/resource tracking, and a running campaign log keep decisions transparent.
+- **Offline-first data:** The client bundles the campaign JSON and uses it automatically if `/api/campaign` can’t be reached. Saves fall back to browser storage whenever Firebase isn’t configured or the player skips sign-in.
 
 ## Tech Stack
 
-- **Frontend:** React + TypeScript (Vite), scoped CSS, dedicated dice tray utilities.
-- **State:** Custom hook + context for hero progression, log history, and branching outcomes.
-- **Backend:** Express (TypeScript) exposing campaign JSON, NPC oracle endpoint, and static asset hosting.
-- **Shared data:** Campaign structure & types live under `shared/` for both client and server.
-- **Container:** Docker multi-stage build ready for App Engine, Cloud Run, or container platforms.
+- **Client:** React 18 + TypeScript via Vite. Context providers (`client/src/context/`) coordinate hero state, authentication, and persistence.
+- **State management:** `useGameEngine` centralises character creation, scene progression, dice, log history, and persistence adapters (local storage or remote Firestore).
+- **Server:** Express 4 (TypeScript via `ts-node-dev` during development) exposes `/api/health`, `/api/campaign`, `/api/oracle`, and `/api/progress`. NPC replies are generated locally—no external AI calls.
+- **Shared modules:** `shared/` contains campaign data, reference tables, and types that both the client and server import directly (see the path aliases in each `tsconfig.json`).
+- **Tooling:** npm workspaces, ESLint + TypeScript for the client, and a multi-stage Dockerfile targeting Node 20. GitHub Actions (`.github/workflows/build.yml`) builds the container and deploys to Cloud Run with Firebase secrets injected at build/deploy time.
 
-## Quick Start
-
-```bash
-# Install dependencies (uses npm workspaces)
-npm install
-
-# Start the API + serve client build concurrently
-npm run dev
-
-# In another terminal, run the React dev server (optional if you prefer hot-reload)
-npm run dev --prefix client
-```
-
-By default the Express server runs on `http://localhost:4000` and proxies `/api/*` for the React dev server (`http://localhost:5173`).
-
-## Account Sync & Cloud Saves
-
-The web app now supports Firebase Authentication with Firestore-backed saves so multiple players can log in and resume their heroes from any device.
-
-1. Create a Firebase project and enable **Email/Password** sign-in under Authentication.
-2. Add a web app and copy the SDK config into `client/.env` (keep this file as a template—copy it to `client/.env.local` for your actual secrets):
-   ```bash
-   VITE_FIREBASE_API_KEY=your-api-key
-   VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-   VITE_FIREBASE_PROJECT_ID=your-project-id
-   VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-   VITE_FIREBASE_MESSAGING_SENDER_ID=...
-   VITE_FIREBASE_APP_ID=...
-   ```
-3. Generate a service account key (JSON) with **Firebase Admin SDK** access.  
-   - In the [Firebase console](https://console.firebase.google.com/), open **Project settings → Service accounts → Firebase Admin SDK → Generate new private key**. Download the JSON file; keep it private.  
-   - Option A: set the environment variable `FIREBASE_SERVICE_ACCOUNT` to the JSON contents. For shells that dislike quotes, base64-encode the file (`base64 service-account.json`) and use that string instead. If the JSON lacks a `project_id`, also set `FIREBASE_PROJECT_ID`. (In CI the GitHub Actions workflow accepts the raw JSON and base64-encodes it before deploying to Cloud Run.)  
-   - Option B: store the JSON on disk and set `GOOGLE_APPLICATION_CREDENTIALS=/absolute/path/service-account.json`. The server reads the file when it starts.
-   - For local development, create `server/firebase-service-account.local.json` (ignored by git) and paste your real key there. The server loads the `.local` file automatically if the environment variable is unset.
-4. Optionally override the Firestore collection name with `FIREBASE_PROGRESS_COLLECTION` (defaults to `gameProgress`).
-
-When Firebase is unavailable or you choose "Continue without an account", Emberfall Ascent automatically runs in guest mode and keeps saves in local storage on the current device.
-
-## Project Structure
+## Repository Layout
 
 ```
-├── client/            # React UI (Vite, TypeScript)
-├── server/            # Express + NPC oracle (TypeScript)
-├── shared/            # Campaign data and shared types
-├── dist/              # Server build output (generated)
-├── Dockerfile         # Container build (multi-stage)
+├── client/                     # React UI (Vite + SWC)
+├── server/                     # Express API, Firebase persistence, NPC oracle
+├── shared/                     # Campaign data + shared types
+├── lessons/                    # Onboarding notes (overview, client tour, server tour)
+├── .github/workflows/build.yml # Cloud Run deployment pipeline
+├── Dockerfile                  # Multi-stage build (Node 20, port 8080)
+├── dist/                       # Generated server + shared output (after build)
 └── README.md
 ```
 
 ### Notable Client Components
 
-- `CharacterCreator` – multi-step D&D character builder (race, class, background, ability scores, skill proficiencies).
-- `SceneView` – renders narrative text, dice results, and branching choices.
-- `ConversationPanel` – talk to allies (Seraphine, Tamsin, Marek, Nerrix, Lirael) with fallback oracle responses.
-- `DiceTray` – quick access to arbitrary dice formulas (d4 through custom expressions).
-- `Sidebar` & `LogPanel` – track stats, inventory, allies, and story log.
-- `Epilogue` – summarises endings based on heart outcome + flags.
+- `CharacterCreator` – multi-step builder for race, class, background, ability scores, proficiencies, and allied hooks.
+- `SceneView` – renders narrative beats, applies choice effects, and triggers ability checks from `shared/campaign.ts`.
+- `ConversationPanel` – Allied Channel UI tied to the `/api/oracle` endpoint with graceful offline fallbacks.
+- `DiceTray`, `Sidebar`, `LogPanel` – utilities for quick rolls, sheet-style readouts, status tracking, inventory, allies, and campaign history.
+- `Epilogue` – surfaces act outcomes based on flags such as `heart_cleansed`, `nerrix_rescued`, or `marek_support`.
 
-## Scripts
+## Quick Start
+
+```bash
+# Install dependencies for the workspace (client + server)
+npm install
+
+# Terminal 1 – start the Express API on http://localhost:4000
+npm run dev
+
+# Terminal 2 – start the Vite dev server with hot reload on http://localhost:5173
+npm run dev --prefix client
+```
+
+The Vite dev server proxies `/api/*` calls to the Express process. If the API isn’t reachable, the client automatically switches to the bundled campaign data and displays an “Offline mode” banner.
+
+## Core Scripts
 
 | Command | Description |
 | --- | --- |
-| `npm run dev` | Starts the Express API (port 4000). |
-| `npm run dev --prefix client` | Vite dev server for the UI (port 5173). |
-| `npm run build --prefix client` | Builds the React app to `client/dist`. |
-| `npm run build --prefix server` | Compiles the Express server + shared data to `dist/`. |
-| `npm run start` | Runs the compiled server from `dist/`. |
-| `npm run lint --prefix client` | Lints the React code with ESLint. |
+| `npm run dev` | Launches the TypeScript Express server with `ts-node-dev` (port 4000 by default). |
+| `npm run dev --prefix client` | Starts the Vite dev server (port 5173). |
+| `npm run build` | Builds the client (Vite) and server (TypeScript) into `dist/`. |
+| `npm run start` | Runs the compiled Express server from `dist/server/src/index.js`; also serves `client/dist`. |
+| `npm run lint` | Delegates to the client’s ESLint configuration. |
+| `npm run build --prefix client` / `npm run build --prefix server` | Run the build steps individually when needed. |
+
+## Firebase Authentication & Cloud Saves
+
+The client uses Firebase Authentication (Email/Password) and calls `/api/progress` with a bearer token. The server verifies tokens via the Firebase Admin SDK and persists the hero state per user in Firestore. When auth isn’t configured or the player taps “Continue without an account,” the client stays in guest mode and uses `localStorage` (`emberfall-ascent-save-v2`).
+
+1. **Client SDK config:** create `client/.env` (or `.env.local`) with your Firebase web app keys.
+   ```bash
+   VITE_FIREBASE_API_KEY=your-api-key
+   VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+   VITE_FIREBASE_PROJECT_ID=your-project-id
+   VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+   VITE_FIREBASE_MESSAGING_SENDER_ID=1234567890
+   VITE_FIREBASE_APP_ID=1:1234567890:web:abcdef
+   ```
+2. **Server credentials:** supply the Admin SDK JSON by either
+   - setting `FIREBASE_SERVICE_ACCOUNT` to the raw JSON (or a base64-encoded string, which is how CI passes it),
+   - pointing `GOOGLE_APPLICATION_CREDENTIALS` at a JSON file, or
+   - dropping `server/firebase-service-account.local.json` with the key contents (auto-loaded in development).
+   If your JSON is missing `project_id`, also set `FIREBASE_PROJECT_ID`.
+3. **Optional overrides:** `FIREBASE_PROGRESS_COLLECTION` (defaults to `gameProgress`) controls the Firestore collection the progress router uses.
+
+## Persistence & API Surface
+
+- `/api/health` – simple health probe (used by Cloud Run & local diagnostics).
+- `/api/campaign` – returns the authoritative campaign JSON sourced from `shared/campaign.ts`.
+- `/api/oracle` – accepts `{ npcId, prompt, hero }` and produces deterministic NPC replies that incorporate flags, stress, wounds, influence, and corruption.
+- `/api/progress` – protected by Firebase ID tokens. Supports `GET` (load), `POST` (save), and `DELETE` (clear).
+
+When Firebase isn’t available, the middleware short-circuits with `503`, and the client remains in guest/local-storage mode. The in-app **Reset Save** button clears both local and remote persistence.
 
 ## Building & Deployment
 
 ```bash
-# Produce production assets (client + server)
+# Build both apps into dist/
 npm run build
 
-# Run the compiled server
-npm start  # serves API + static client by default on port 4000
+# Serve the bundled client + API from dist/ (port 4000 by default)
+npm start
 ```
 
 ### Docker
 
 ```bash
-# Build the container
-docker build -t emberfall-ascent .
+# Build the multi-stage image (needs the VITE_* build args for client auth config)
+docker build -t emberfall-ascent \
+  --build-arg VITE_FIREBASE_API_KEY=... \
+  --build-arg VITE_FIREBASE_AUTH_DOMAIN=... \
+  --build-arg VITE_FIREBASE_PROJECT_ID=... \
+  --build-arg VITE_FIREBASE_STORAGE_BUCKET=... \
+  --build-arg VITE_FIREBASE_MESSAGING_SENDER_ID=... \
+  --build-arg VITE_FIREBASE_APP_ID=... \
+  .
 
-# Run it locally (mapped to port 8080)
+# Run locally on port 8080 (matches Cloud Run/App Engine defaults)
 docker run -p 8080:8080 emberfall-ascent
 ```
 
-The container listens on port `8080` to align with App Engine / Cloud Run defaults. Set `PORT` as needed.
+### Cloud Run pipeline
 
-## Testing & Verification
+`.github/workflows/build.yml` authenticates via Workload Identity, builds the Docker image, pushes it to Artifact Registry, and deploys to Cloud Run (`CLOUD_RUN_SERVICE=dnd`). Secrets provide the `VITE_*` build arguments plus the service-account JSON (base64-encoded) for the runtime environment variables `FIREBASE_SERVICE_ACCOUNT` and `FIREBASE_PROJECT_ID`.
 
-1. Install dependencies and run both dev servers (`npm run dev`, `npm run dev --prefix client`).
-2. Open `http://localhost:5173` for hot-reload development or `http://localhost:4000` to serve the built client.
-3. Walk through the campaign, verifying:
-   - Dice rolls adjust outcomes, stress, wounds, and influence.
-   - Flags (e.g., `heart_cleansed`, `nerrix_rescued`) influence later scenes and epilogue text.
-   - Conversation panel returns appropriate responses and falls back gracefully if the oracle endpoint is unreachable.
-4. Optionally clear the save from the setup screen to test a fresh run.
-5. (Optional) After configuring Firebase, sign in with multiple accounts to confirm that progress is saved to Firestore and reloads correctly on different browsers/devices.
+## Testing & Manual Verification
 
-## Notes
+1. Run both dev servers (`npm run dev` and `npm run dev --prefix client`) and open `http://localhost:5173`.
+2. Create a hero, progress through all three acts, and confirm that dice rolls adjust stress, wounds, influence, corruption, and narrative branches.
+3. Trigger the Allied Channel to ensure `/api/oracle` responds and that the client shows the scripted fallback if you stop the server.
+4. Toggle guest mode vs. Firebase-authenticated mode to confirm saves land in local storage or Firestore (`/api/progress` endpoints return `2xx`).
+5. Use **Reset Save** to ensure state clears both locally and remotely.
 
-- When authentication is configured, saves are stored per-user in Firestore. In guest mode the app falls back to local storage (`emberfall-ascent-save-v2`) on the current device.
-- Use **Reset Save** on the setup screen to clear the current hero and remove the saved progress (local or cloud).
-- The NPC oracle is deterministic and runs entirely locally—no external AI service required.
-- When deploying to GCP (App Engine or Cloud Run), build the container and push to a registry; the server will serve both the API and static client content.
+## Additional Notes
+
+- Status values are clamped and validated on the client before persistence, reducing corrupt save data.
+- Shared types (`shared/types.ts`) are part of both TypeScript build graphs, so breaking changes surface at compile time.
+- The `lessons/` folder contains guided tours of the codebase (overview, client tour, and server tour) if you need a refresher.
