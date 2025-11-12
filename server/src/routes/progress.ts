@@ -16,6 +16,12 @@ interface ProgressDocument {
 
 const router = Router();
 
+// Set up rate limiter: maximum 100 requests per 15 minutes
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP/user to 100 requests per windowMs
+});
+
 const isValidState = (candidate: unknown): candidate is GameStateSnapshot => {
   if (!candidate || typeof candidate !== 'object') {
     return false;
@@ -30,6 +36,7 @@ const isValidState = (candidate: unknown): candidate is GameStateSnapshot => {
 };
 
 router.use(requireFirebaseAuth);
+router.use(limiter);
 router.get('/', async (req, res) => {
   if (!isFirebaseAdminReady()) {
     return res.status(503).json({ error: 'Persistence backend unavailable.' });
