@@ -19,22 +19,40 @@ const tierLabels: Record<NonNullable<WorldMapLocation['tier']> | 'city', string>
 const landmasses = [
   {
     id: 'emberfall-bastion',
-    path: 'M8 118C4 98 12 82 24 78C33 75 37 66 31 57C24 47 28 34 44 32C58 30 64 24 73 27C86 32 93 28 98 36C103 44 101 56 94 63C88 70 90 80 98 88C107 97 106 108 98 116C90 124 76 122 64 118C52 114 44 123 31 122C20 121 12 125 8 118Z'
+    path: 'M6 114C4 96 14 78 28 74C39 71 44 64 40 55C34 42 40 30 56 26C67 23 75 20 84 24C95 28 106 38 106 54C106 65 102 74 109 82C117 91 114 110 101 118C88 126 74 122 64 118C50 113 44 119 34 120C22 121 8 124 6 114Z'
   },
   {
     id: 'spire-crown',
-    path: 'M16 84C12 70 21 62 34 60C47 58 54 52 52 42C50 32 56 22 70 20C82 18 93 14 98 22C104 31 101 44 94 50C88 56 90 64 96 70C104 79 100 90 88 92C74 94 60 100 46 98C32 96 20 94 16 84Z'
+    path: 'M18 82C14 70 24 60 36 58C48 56 55 50 54 40C52 28 62 20 78 18C90 16 102 20 108 30C114 40 112 52 104 60C96 68 98 76 104 84C112 94 108 104 96 106C82 108 68 112 54 110C40 108 22 94 18 82Z'
   }
 ];
 
-const ridgePaths = [
-  'M15 92C32 82 48 84 64 76C76 70 86 68 96 70',
-  'M28 58C44 64 62 62 76 52C86 44 94 46 100 54'
+const shorelinePaths = [
+  'M10 104C20 90 36 86 52 78C68 70 84 70 96 76C110 82 116 96 112 108',
+  'M26 66C42 74 62 74 78 64C90 56 106 54 118 64'
+];
+
+const contourPaths = [
+  'M18 94C28 84 48 80 62 74C74 68 86 68 96 74',
+  'M32 60C48 68 66 64 80 56C94 48 106 46 116 52'
 ];
 
 const runePaths = [
-  'M38 44L42 32L46 44L58 48L46 52L42 64L38 52L26 48Z',
-  'M70 86L74 96L84 100L74 104L70 114L66 104L56 100L66 96Z'
+  {
+    id: 'sigil-market',
+    d: 'M0 -6L4 -2L2 0L4 2L0 6L-4 2L-2 0L-4 -2Z',
+    transform: 'translate(34 92) scale(1.2)'
+  },
+  {
+    id: 'sigil-plaza',
+    d: 'M0 -5L3 0L0 5L-3 0Z M0 -8V8',
+    transform: 'translate(64 64) scale(1.1)'
+  },
+  {
+    id: 'sigil-heart',
+    d: 'M0 -6C2 -10 8 -10 9 -4C10 2 0 8 0 8C0 8 -10 2 -9 -4C-8 -10 -2 -10 0 -6Z',
+    transform: 'translate(82 34) scale(0.9)'
+  }
 ];
 
 const buildSceneTitleLookup = (scenes: SceneNode[]) => {
@@ -266,43 +284,43 @@ const WorldMap = ({ variant = 'full' }: WorldMapProps) => {
               <stop offset="60%" stopColor="rgba(15,23,42,0.2)" />
               <stop offset="100%" stopColor="rgba(15,23,42,0.6)" />
             </linearGradient>
-            <filter id="paperGrain">
-              <feTurbulence
-                type="fractalNoise"
-                baseFrequency="0.9"
-                numOctaves="3"
-                result="noise"
-              />
-              <feColorMatrix
-                type="matrix"
-                values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.3 0"
-              />
-              <feBlend in="SourceGraphic" in2="noise" mode="multiply" />
-            </filter>
+            <radialGradient id="landGradient" cx="50%" cy="45%" r="75%">
+              <stop offset="0%" stopColor="#1f2b4b" />
+              <stop offset="60%" stopColor="#11172c" />
+              <stop offset="100%" stopColor="#070b16" />
+            </radialGradient>
             <pattern
               id="atlasGrid"
               width="10"
               height="10"
               patternUnits="userSpaceOnUse"
             >
-              <path d="M10 0H0V10" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="0.2" />
+              <path d="M10 0H0V10" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="0.25" />
             </pattern>
           </defs>
           <rect
             width={mapConfig.width}
             height={mapConfig.height}
             fill="url(#atlasGrid)"
-            opacity={0.8}
+            opacity={0.6}
           />
-          <g filter="url(#paperGrain)">
+          <g className="world-map__terrain">
             {landmasses.map((land) => (
-              <path key={land.id} d={land.path} className="world-map__landmass" />
+              <path
+                key={land.id}
+                d={land.path}
+                className="world-map__landmass"
+                fill="url(#landGradient)"
+              />
             ))}
-            {ridgePaths.map((path, index) => (
-              <path key={`ridge-${index}`} d={path} className="world-map__ridge" />
+            {shorelinePaths.map((path, index) => (
+              <path key={`shore-${index}`} d={path} className="world-map__shoreline" />
             ))}
-            {runePaths.map((path, index) => (
-              <path key={`rune-${index}`} d={path} className="world-map__rune" />
+            {contourPaths.map((path, index) => (
+              <path key={`contour-${index}`} d={path} className="world-map__contour" />
+            ))}
+            {runePaths.map((sigil) => (
+              <path key={sigil.id} d={sigil.d} className="world-map__rune" transform={sigil.transform} />
             ))}
           </g>
           <g className="world-map__connection-lines">
