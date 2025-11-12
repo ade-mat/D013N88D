@@ -8,6 +8,10 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+  id-token: write
+
 env:
   PROJECT_ID: newsite-4cb22
   GAR_LOCATION: europe-west2

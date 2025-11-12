@@ -309,6 +309,21 @@ const getScene = (campaign: Campaign, sceneId: string | null): SceneNode | null 
   return campaign.scenes.find((scene) => scene.id === sceneId) ?? null;
 };
 
+export interface PendingSkillCheck {
+  id: string;
+  label: string;
+  description?: string;
+  ability: Ability;
+  abilityMod: number;
+  skill?: Skill;
+  dc: number;
+  advantage: boolean;
+  disadvantage: boolean;
+  proficient: boolean;
+  proficiencyBonus: number;
+  miscBonus: number;
+}
+
 export interface GameEngine {
   campaign: Campaign;
   hero: HeroState | null;
@@ -318,6 +333,7 @@ export interface GameEngine {
   lastRoll: CheckRollResult | null;
   visitedScenes: Record<string, number>;
   conversation: Record<string, ConversationTurn[]>;
+  pendingSkillCheck: PendingSkillCheck | null;
   startGame: (build: CharacterBuild) => void;
   chooseOption: (choiceId: string) => void;
   resetGame: () => void;
@@ -325,6 +341,7 @@ export interface GameEngine {
   recordNpcConversation: (npcId: string, text: string) => void;
   isGameComplete: boolean;
   abilityMod: (ability: Ability) => number;
+  rollPendingSkillCheck: () => CheckRollResult | null;
 }
 
 export const useGameEngine = (
@@ -343,6 +360,10 @@ export const useGameEngine = (
   const [conversation, setConversation] = useState<
     Record<string, ConversationTurn[]>
   >({});
+  const [pendingCheck, setPendingCheck] = useState<{
+    choice: SceneChoice;
+    options: CheckRollOptions;
+  } | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
   const lastSceneIdRef = useRef<string | null>(null);
   const persistenceImpl = useMemo(
@@ -388,18 +409,19 @@ export const useGameEngine = (
 
       setHero(updatedHero);
       setCurrentSceneId(outcome.nextSceneId);
+      setPendingCheck(null);
       return updatedHero;
     },
     [appendLog]
   );
 
-  const handleSkillCheck = useCallback(
+  const queueSkillCheck = useCallback(
     (
       choice: SceneChoice,
       heroState: HeroState
     ) => {
       if (!choice.skillCheck) {
-        return heroState;
+        return;
       }
 
       const { ability, skill, dc, advantageIfFlag, disadvantageIfFlag } =
@@ -407,7 +429,8 @@ export const useGameEngine = (
 
       const abilityModifier = getAbilityModifier(heroState.abilityScores[ability]);
       const proficientInSkill = skill ? heroState.skills[skill] === true : false;
-      const miscBonus = heroState.flags['heart_cleansed'] && ability === 'wisdom' ? 1 : 0;
+      const miscBonus =
+        heroState.flags['heart_cleansed'] && ability === 'wisdom' ? 1 : 0;
 
       const options: CheckRollOptions = {
         ability,
@@ -423,25 +446,46 @@ export const useGameEngine = (
         skill
       };
 
-      const roll = rollAbilityCheck(options);
-      setLastRoll(roll);
-      const labelParts = [
-        `Check: ${skill ? skill.replace(/([A-Z])/g, ' $1') : ABILITY_LABEL[ability]}`
-      ];
-      appendLog(buildLogEntry('roll', labelParts.join(' '), formatCheckSummary(roll)));
-
-      const outcome = roll.success
-        ? choice.skillCheck.success
-        : choice.skillCheck.failure;
-
-      return applyOutcome(outcome, heroState);
+      setPendingCheck({ choice, options });
     },
-    [appendLog, applyOutcome]
+    []
   );
+
+  const rollPendingSkillCheck = useCallback((): CheckRollResult | null => {
+    if (!pendingCheck || !hero) {
+      return null;
+    }
+
+    const roll = rollAbilityCheck(pendingCheck.options);
+    setLastRoll(roll);
+
+    const skillLabel = pendingCheck.options.skill
+      ? SKILLS.find((entry) => entry.id === pendingCheck.options.skill)?.label ??
+        pendingCheck.options.skill
+      : ABILITY_LABEL[pendingCheck.options.ability];
+    appendLog(
+      buildLogEntry('roll', `Check: ${skillLabel}`, formatCheckSummary(roll))
+    );
+
+    const outcome = roll.success
+      ? pendingCheck.choice.skillCheck?.success
+      : pendingCheck.choice.skillCheck?.failure;
+
+    if (outcome && hero) {
+      applyOutcome(outcome, hero);
+    }
+
+    setPendingCheck(null);
+    return roll;
+  }, [appendLog, applyOutcome, hero, pendingCheck]);
 
   const chooseOption = useCallback(
     (choiceId: string) => {
       if (!hero || !currentScene) {
+        return;
+      }
+
+      if (pendingCheck) {
         return;
       }
 
@@ -458,10 +502,10 @@ export const useGameEngine = (
       }
 
       if (choice.skillCheck) {
-        handleSkillCheck(choice, hero);
+        queueSkillCheck(choice, hero);
       }
     },
-    [appendLog, applyOutcome, currentScene, handleSkillCheck, hero]
+    [appendLog, applyOutcome, currentScene, hero, pendingCheck, queueSkillCheck]
   );
 
   const startGame = useCallback(
@@ -479,6 +523,7 @@ export const useGameEngine = (
       setConversation({});
       setLastRoll(null);
       setCurrentSceneId(campaign.introSceneId);
+      setPendingCheck(null);
       lastSceneIdRef.current = null;
     },
     [campaign.introSceneId]
@@ -491,6 +536,7 @@ export const useGameEngine = (
     setConversation({});
     setLastRoll(null);
     setCurrentSceneId(campaign.introSceneId);
+    setPendingCheck(null);
     lastSceneIdRef.current = null;
     void persistenceImpl.clear().catch((err) => {
       // eslint-disable-next-line no-console
@@ -632,6 +678,27 @@ export const useGameEngine = (
     }
   }, [appendLog, campaign, currentSceneId, hero]);
 
+  const pendingSkillCheck = useMemo<PendingSkillCheck | null>(() => {
+    if (!pendingCheck) {
+      return null;
+    }
+    const { choice, options } = pendingCheck;
+    return {
+      id: choice.id,
+      label: choice.label,
+      description: choice.description,
+      ability: options.ability,
+      abilityMod: options.abilityMod,
+      skill: options.skill,
+      dc: options.dc,
+      advantage: Boolean(options.advantage),
+      disadvantage: Boolean(options.disadvantage),
+      proficient: Boolean(options.proficient),
+      proficiencyBonus: options.proficiencyBonus,
+      miscBonus: options.miscBonus ?? 0
+    };
+  }, [pendingCheck]);
+
   const isGameComplete = currentSceneId === null;
 
   return {
@@ -643,12 +710,14 @@ export const useGameEngine = (
     lastRoll,
     visitedScenes,
     conversation,
+    pendingSkillCheck,
     startGame,
     chooseOption,
     resetGame,
     recordPlayerConversation,
     recordNpcConversation,
     isGameComplete,
-    abilityMod
+    abilityMod,
+    rollPendingSkillCheck
   };
 };

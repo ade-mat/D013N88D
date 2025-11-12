@@ -9,6 +9,7 @@ permissions:
   actions: read
   contents: read
   security-events: write
+  id-token: write
 
 jobs:
   microsoft-security-scan:
@@ -18,6 +19,7 @@ jobs:
       actions: read
       contents: read
       security-events: write
+      id-token: write
 
     steps:
       - name: Checkout repository
@@ -25,9 +27,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install .NET 6 runtime for CredScan
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '6.0.x'
+
       - name: Run Microsoft Security DevOps analyzers
         id: msdo
         uses: microsoft/security-devops-action@v1
+        with:
+          tools: credscan,checkov
 
       - name: Upload SARIF to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
