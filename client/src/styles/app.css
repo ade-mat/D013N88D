@@ -878,7 +878,7 @@ button {
 .world-map__canvas--fullscreen {
   aspect-ratio: 5 / 6;
   height: auto;
-  max-height: 72vh;
+  max-height: 68vh;
   cursor: default;
 }
 
@@ -1044,7 +1044,7 @@ button {
 }
 
 .world-map-modal__map {
-  max-height: 72vh;
+  max-height: 68vh;
   width: 100%;
   align-self: start;
   justify-self: center;
@@ -1054,6 +1054,8 @@ button {
 .world-map-modal__body .world-map__canvas--fullscreen {
   border-radius: 1rem;
   width: 100%;
+  transform-origin: center top;
+  margin: 0 auto;
 }
 
 .world-map-modal__sidebar {
