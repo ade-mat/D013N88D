@@ -8,7 +8,7 @@ Emberfall Ascent is a single-player narrative RPG inspired by tabletop D&D. Buil
 - **5e-style hero builder:** Choose a race, class, and background, allocate ability scores, pick proficiencies, and automatically derive armor class, speed, equipment, and features from shared reference data.
 - **Scene engine:** Story nodes, branching choices, and consequence tracking live in `shared/`. Ability checks (d20 + modifiers) can adjust stress, wounds, influence, and corruption, unlock allies, or change endings.
 - **Allied Channel:** The in-app conversation panel lets you message Seraphine, Tamsin, Marek, Nerrix, or Lirael. The server-side oracle (`POST /api/oracle`) crafts responses based on the hero’s flags/status, and the client falls back to scripted dialogue if the endpoint is offline.
-- **Dice Tray & Log:** Quick dice formulas, combat/resource tracking, and a running campaign log keep decisions transparent.
+- **Manual Dice Tray & Log:** Resolve every skill check yourself inside the Dice Tray, view advantage/disadvantage math, and keep a running campaign log for transparency.
 - **Offline-first data:** The client bundles the campaign JSON and uses it automatically if `/api/campaign` can’t be reached. Saves fall back to browser storage whenever Firebase isn’t configured or the player skips sign-in.
 
 ## Tech Stack
@@ -27,6 +27,7 @@ Emberfall Ascent is a single-player narrative RPG inspired by tabletop D&D. Buil
 ├── shared/                     # Campaign data + shared types
 ├── lessons/                    # Onboarding notes (overview, client tour, server tour)
 ├── .github/workflows/build.yml # Cloud Run deployment pipeline
+├── .github/workflows/security-scan.yml # CodeQL + MSDO + Trivy security suite
 ├── Dockerfile                  # Multi-stage build (Node 20, port 8080)
 ├── dist/                       # Generated server + shared output (after build)
 └── README.md
@@ -54,6 +55,14 @@ npm run dev --prefix client
 ```
 
 The Vite dev server proxies `/api/*` calls to the Express process. If the API isn’t reachable, the client automatically switches to the bundled campaign data and displays an “Offline mode” banner.
+
+### Manual Dice Workflow
+
+1. Pick a scene option that requires a skill/ability check. The choice is logged immediately but the scene locks until you roll.
+2. A banner in `SceneView` explains which check is pending (e.g., *Stealth (Dex) vs DC 14*) and the Dice Tray switches into **Resolve Skill Check** mode.
+3. Roll the dice in-app: the Tray automatically applies advantage/disadvantage, shows the modifiers that will be added, and logs the result for the campaign history.
+4. Once you hit **Roll Skill Check**, the engine applies the success/failure outcome, updates hero stats, and unlocks the next set of options.
+5. Outside of encounters, you can switch the Tray back to freestyle dice (d4–d100) for any ad‑hoc rolls you want to make.
 
 ## Core Scripts
 
@@ -139,3 +148,11 @@ docker run -p 8080:8080 emberfall-ascent
 - Status values are clamped and validated on the client before persistence, reducing corrupt save data.
 - Shared types (`shared/types.ts`) are part of both TypeScript build graphs, so breaking changes surface at compile time.
 - The `lessons/` folder contains guided tours of the codebase (overview, client tour, and server tour) if you need a refresher.
+
+## Security Automation
+
+- `.github/workflows/security-scan.yml` runs on every push, PR, and the weekly cron.
+  - **CodeQL Suite:** single job that scans the JavaScript/TypeScript codebase and GitHub Actions workflow definitions.
+  - **Microsoft Security DevOps:** executes CredScan (needs.NET 6) and Checkov with SARIF uploads to the GitHub Security tab.
+  - **Trivy Scan:** builds the Docker image from this repo and publishes container vulnerability findings back to GitHub.
+- `.github/workflows/build.yml` remains focused on Cloud Run deployment but now declares only the minimum permissions required to satisfy Checkov gatekeepers.
