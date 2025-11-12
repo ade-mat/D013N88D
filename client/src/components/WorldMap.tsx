@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import clsx from 'clsx';
 import { useGame } from '@/context/GameContext';
 import type { SceneNode, WorldMapLocation } from '@/types';
@@ -113,6 +114,7 @@ const WorldMap = ({ variant = 'full' }: WorldMapProps) => {
   const { campaign, currentSceneId, visitedScenes } = useGame();
   const mapConfig = campaign.map;
   const [focusedLocationId, setFocusedLocationId] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const panelClass = clsx(
     'world-map-panel',
@@ -239,6 +241,177 @@ const WorldMap = ({ variant = 'full' }: WorldMapProps) => {
   const nodeRadius = variant === 'sidebar' ? 2.4 : 3.2;
   const haloRadius = nodeRadius + 1.2;
 
+  const handleOpenFullscreen = () => {
+    setIsFullscreen(true);
+  };
+
+  const handleCloseFullscreen = () => {
+    setIsFullscreen(false);
+  };
+
+  useEffect(() => {
+    if (!isFullscreen) {
+      return;
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsFullscreen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [isFullscreen]);
+
+  const handleCanvasKey = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleOpenFullscreen();
+    }
+  };
+
+  const mapCanvas = (size: 'normal' | 'full') => (
+    <div
+      className={clsx(
+        'world-map__canvas',
+        size === 'full' && 'world-map__canvas--fullscreen'
+      )}
+      role={size === 'normal' ? 'button' : undefined}
+      tabIndex={size === 'normal' ? 0 : undefined}
+      aria-label={size === 'normal' ? 'Open Emberfall map' : undefined}
+      onClick={size === 'normal' ? handleOpenFullscreen : undefined}
+      onKeyDown={size === 'normal' ? handleCanvasKey : undefined}
+    >
+      <svg
+        className="world-map__svg"
+        viewBox={viewBox}
+        preserveAspectRatio="xMidYMid meet"
+        aria-hidden="true"
+      >
+        <defs>
+          <linearGradient id="atlasGlow" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="rgba(249,113,22,0.28)" />
+            <stop offset="60%" stopColor="rgba(15,23,42,0.2)" />
+            <stop offset="100%" stopColor="rgba(15,23,42,0.6)" />
+          </linearGradient>
+          <radialGradient id="landGradient" cx="50%" cy="45%" r="75%">
+            <stop offset="0%" stopColor="#1f2b4b" />
+            <stop offset="60%" stopColor="#11172c" />
+            <stop offset="100%" stopColor="#070b16" />
+          </radialGradient>
+          <pattern
+            id="atlasGrid"
+            width="10"
+            height="10"
+            patternUnits="userSpaceOnUse"
+          >
+            <path d="M10 0H0V10" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="0.25" />
+          </pattern>
+        </defs>
+        <rect
+          width={mapConfig.width}
+          height={mapConfig.height}
+          fill="url(#atlasGrid)"
+          opacity={0.6}
+        />
+        <g className="world-map__terrain">
+          {landmasses.map((land) => (
+            <path
+              key={land.id}
+              d={land.path}
+              className="world-map__landmass"
+              fill="url(#landGradient)"
+            />
+          ))}
+          {shorelinePaths.map((path, index) => (
+            <path key={`shore-${index}`} d={path} className="world-map__shoreline" />
+          ))}
+          {contourPaths.map((path, index) => (
+            <path key={`contour-${index}`} d={path} className="world-map__contour" />
+          ))}
+          {runePaths.map((sigil) => (
+            <path key={sigil.id} d={sigil.d} className="world-map__rune" transform={sigil.transform} />
+          ))}
+        </g>
+        <g className="world-map__connection-lines">
+          {connectionSegments.map((segment) => (
+            <line
+              key={segment.id}
+              x1={segment.from.position.x}
+              y1={segment.from.position.y}
+              x2={segment.to.position.x}
+              y2={segment.to.position.y}
+              className={clsx(
+                'world-map__segment',
+                segment.visited && 'world-map__segment--visited'
+              )}
+            />
+          ))}
+        </g>
+        <g className="world-map__node-glows">
+          {mapConfig.locations.map((location) => {
+            const visited = visitedLocationIds.has(location.id);
+            const isCurrent = currentLocationId === location.id;
+            return (
+              <g key={`glow-${location.id}`}>
+                <circle
+                  cx={location.position.x}
+                  cy={location.position.y}
+                  r={haloRadius}
+                  className={clsx(
+                    'world-map__node-halo',
+                    visited && 'visited',
+                    isCurrent && 'current'
+                  )}
+                />
+                <circle
+                  cx={location.position.x}
+                  cy={location.position.y}
+                  r={nodeRadius}
+                  className={clsx(
+                    'world-map__node-core',
+                    visited && 'visited',
+                    isCurrent && 'current'
+                  )}
+                />
+              </g>
+            );
+          })}
+        </g>
+      </svg>
+      <div className="world-map__node-layer">
+        {mapConfig.locations.map((location) => {
+          const visited = visitedLocationIds.has(location.id);
+          const isCurrent = currentLocationId === location.id;
+          const left = (location.position.x / mapConfig.width) * 100;
+          const top = (location.position.y / mapConfig.height) * 100;
+          return (
+            <button
+              key={location.id}
+              type="button"
+              className={clsx(
+                'world-map__node',
+                visited && 'visited',
+                isCurrent && 'current'
+              )}
+              style={{ left: `${left}%`, top: `${top}%` }}
+              onMouseEnter={() => setFocusedLocationId(location.id)}
+              onMouseLeave={() => setFocusedLocationId(null)}
+              onFocus={() => setFocusedLocationId(location.id)}
+              onBlur={() => setFocusedLocationId(null)}
+            >
+              <span className="world-map__node-glyph">{tierGlyph(location.tier)}</span>
+              <span className="world-map__node-label">{location.name}</span>
+            </button>
+          );
+        })}
+      </div>
+      {size === 'normal' && <div className="world-map__expand-hint">Click to expand</div>}
+      <CompassRose />
+    </div>
+  );
+
   return (
     <section className={panelClass}>
       <header className="world-map__header">
@@ -271,133 +444,7 @@ const WorldMap = ({ variant = 'full' }: WorldMapProps) => {
         </span>
       </div>
 
-      <div className="world-map__canvas">
-        <svg
-          className="world-map__svg"
-          viewBox={viewBox}
-          preserveAspectRatio="xMidYMid meet"
-          aria-hidden="true"
-        >
-          <defs>
-            <linearGradient id="atlasGlow" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="rgba(249,113,22,0.28)" />
-              <stop offset="60%" stopColor="rgba(15,23,42,0.2)" />
-              <stop offset="100%" stopColor="rgba(15,23,42,0.6)" />
-            </linearGradient>
-            <radialGradient id="landGradient" cx="50%" cy="45%" r="75%">
-              <stop offset="0%" stopColor="#1f2b4b" />
-              <stop offset="60%" stopColor="#11172c" />
-              <stop offset="100%" stopColor="#070b16" />
-            </radialGradient>
-            <pattern
-              id="atlasGrid"
-              width="10"
-              height="10"
-              patternUnits="userSpaceOnUse"
-            >
-              <path d="M10 0H0V10" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="0.25" />
-            </pattern>
-          </defs>
-          <rect
-            width={mapConfig.width}
-            height={mapConfig.height}
-            fill="url(#atlasGrid)"
-            opacity={0.6}
-          />
-          <g className="world-map__terrain">
-            {landmasses.map((land) => (
-              <path
-                key={land.id}
-                d={land.path}
-                className="world-map__landmass"
-                fill="url(#landGradient)"
-              />
-            ))}
-            {shorelinePaths.map((path, index) => (
-              <path key={`shore-${index}`} d={path} className="world-map__shoreline" />
-            ))}
-            {contourPaths.map((path, index) => (
-              <path key={`contour-${index}`} d={path} className="world-map__contour" />
-            ))}
-            {runePaths.map((sigil) => (
-              <path key={sigil.id} d={sigil.d} className="world-map__rune" transform={sigil.transform} />
-            ))}
-          </g>
-          <g className="world-map__connection-lines">
-            {connectionSegments.map((segment) => (
-              <line
-                key={segment.id}
-                x1={segment.from.position.x}
-                y1={segment.from.position.y}
-                x2={segment.to.position.x}
-                y2={segment.to.position.y}
-                className={clsx(
-                  'world-map__segment',
-                  segment.visited && 'world-map__segment--visited'
-                )}
-              />
-            ))}
-          </g>
-          <g className="world-map__node-glows">
-            {mapConfig.locations.map((location) => {
-              const visited = visitedLocationIds.has(location.id);
-              const isCurrent = currentLocationId === location.id;
-              return (
-                <g key={`glow-${location.id}`}>
-                  <circle
-                    cx={location.position.x}
-                    cy={location.position.y}
-                    r={haloRadius}
-                    className={clsx(
-                      'world-map__node-halo',
-                      visited && 'visited',
-                      isCurrent && 'current'
-                    )}
-                  />
-                  <circle
-                    cx={location.position.x}
-                    cy={location.position.y}
-                    r={nodeRadius}
-                    className={clsx(
-                      'world-map__node-core',
-                      visited && 'visited',
-                      isCurrent && 'current'
-                    )}
-                  />
-                </g>
-              );
-            })}
-          </g>
-        </svg>
-        <div className="world-map__node-layer">
-          {mapConfig.locations.map((location) => {
-            const visited = visitedLocationIds.has(location.id);
-            const isCurrent = currentLocationId === location.id;
-            const left = (location.position.x / mapConfig.width) * 100;
-            const top = (location.position.y / mapConfig.height) * 100;
-            return (
-              <button
-                key={location.id}
-                type="button"
-                className={clsx(
-                  'world-map__node',
-                  visited && 'visited',
-                  isCurrent && 'current'
-                )}
-                style={{ left: `${left}%`, top: `${top}%` }}
-                onMouseEnter={() => setFocusedLocationId(location.id)}
-                onMouseLeave={() => setFocusedLocationId(null)}
-                onFocus={() => setFocusedLocationId(location.id)}
-                onBlur={() => setFocusedLocationId(null)}
-              >
-                <span className="world-map__node-glyph">{tierGlyph(location.tier)}</span>
-                <span className="world-map__node-label">{location.name}</span>
-              </button>
-            );
-          })}
-        </div>
-        <CompassRose />
-      </div>
+      {mapCanvas('normal')}
 
       {detailLocation && (
         <div className="world-map__details">
@@ -468,6 +515,101 @@ const WorldMap = ({ variant = 'full' }: WorldMapProps) => {
           </ul>
         </div>
       </div>
+      {isFullscreen && (
+        <div className="world-map-modal" role="dialog" aria-modal="true">
+          <div className="world-map-modal__backdrop" onClick={handleCloseFullscreen} />
+          <div className="world-map-modal__content">
+            <header>
+              <h3>Emberfall Atlas</h3>
+              <button
+                type="button"
+                className="world-map-modal__close"
+                onClick={handleCloseFullscreen}
+                aria-label="Close map"
+              >
+                ×
+              </button>
+            </header>
+            <div className="world-map-modal__body">
+              {mapCanvas('full')}
+              <div className="world-map-modal__sidebar">
+                {detailLocation && (
+                  <div className="world-map__details">
+                    <div className="world-map__detail-heading">
+                      <div className="world-map__detail-icon">
+                        {tierGlyph(detailLocation.tier)}
+                      </div>
+                      <div>
+                        <h4>{detailLocation.name}</h4>
+                        <p>{detailLocation.summary}</p>
+                      </div>
+                    </div>
+                    <div className="world-map__detail-meta">
+                      <span className="world-map__tier-chip">
+                        {tierLabels[detailLocation.tier ?? 'city']}
+                      </span>
+                      <span
+                        className={clsx(
+                          'world-map__badge',
+                          visitedLocationIds.has(detailLocation.id) && 'visited',
+                          currentLocationId === detailLocation.id && 'current'
+                        )}
+                      >
+                        {currentLocationId === detailLocation.id
+                          ? 'Active Objective'
+                          : visitedLocationIds.has(detailLocation.id)
+                            ? 'Visited'
+                            : 'Hidden'}
+                      </span>
+                    </div>
+                    {detailSceneTitles.length > 0 && (
+                      <p className="world-map__scene-list">
+                        Scenes: {detailSceneTitles.join(', ')}
+                      </p>
+                    )}
+                  </div>
+                )}
+                <div className="world-map__status">
+                  <div>
+                    <h5>Visited Landmarks</h5>
+                    <ul>
+                      {visitedLocations.length === 0 ? (
+                        <li className="muted">No locations explored yet.</li>
+                      ) : (
+                        visitedLocations.map((location) => (
+                          <li key={location.id}>
+                            <span className="world-map__status-glyph">
+                              {tierGlyph(location.tier)}
+                            </span>
+                            {location.name}
+                          </li>
+                        ))
+                      )}
+                    </ul>
+                  </div>
+                  <div>
+                    <h5>On the Horizon</h5>
+                    <ul>
+                      {upcomingLocations.length === 0 ? (
+                        <li className="muted">All locations cleared.</li>
+                      ) : (
+                        upcomingLocations.map((location) => (
+                          <li key={location.id}>
+                            <span className="world-map__status-glyph">
+                              {tierGlyph(location.tier)}
+                            </span>
+                            {location.name}
+                          </li>
+                        ))
+                      )}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
