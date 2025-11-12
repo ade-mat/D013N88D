@@ -75,9 +75,9 @@ const GameShell = ({
             )}
           </section>
           <section className="secondary-panel">
+            <DiceTray />
             <Sidebar />
             <ConversationPanel />
-            <DiceTray />
             <LogPanel />
           </section>
         </main>
