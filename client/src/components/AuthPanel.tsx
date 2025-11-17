@@ -8,7 +8,7 @@ interface AuthPanelProps {
 type AuthMode = 'signIn' | 'signUp';
 
 const AuthPanel = ({ onSkip }: AuthPanelProps) => {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, sendPasswordReset } = useAuth();
   const [mode, setMode] = useState<AuthMode>('signIn');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -99,6 +99,32 @@ const AuthPanel = ({ onSkip }: AuthPanelProps) => {
                 required
               />
             </label>
+          )}
+
+          {mode === 'signIn' && (
+            <button
+              type="button"
+              className="auth-forgot"
+              onClick={async () => {
+                if (!email.trim()) {
+                  setError('Enter your email to reset your password.');
+                  return;
+                }
+                try {
+                  setSubmitting(true);
+                  await sendPasswordReset(email.trim());
+                  setError('Password reset email sent. Check your inbox.');
+                } catch (err) {
+                  const message =
+                    err instanceof Error ? err.message : 'Failed to send reset email.';
+                  setError(message);
+                } finally {
+                  setSubmitting(false);
+                }
+              }}
+            >
+              Forgot your password?
+            </button>
           )}
 
           {error && <div className="auth-error">{error}</div>}

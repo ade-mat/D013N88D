@@ -11,6 +11,7 @@ import {
   createUserWithEmailAndPassword,
   getAuth,
   onAuthStateChanged,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   type User
@@ -28,6 +29,7 @@ interface AuthContextValue {
   authAvailable: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
+  sendPasswordReset: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
   getIdToken: (forceRefresh?: boolean) => Promise<string | null>;
 }
@@ -80,6 +82,16 @@ export const AuthProvider = ({ children }: PropsWithChildren): JSX.Element => {
     [auth]
   );
 
+  const sendPasswordReset = useCallback(
+    async (email: string) => {
+      if (!auth) {
+        throw new Error('Authentication is not configured.');
+      }
+      await sendPasswordResetEmail(auth, email);
+    },
+    [auth]
+  );
+
   const signOut = useCallback(async () => {
     if (!auth) {
       return;
@@ -109,10 +121,11 @@ export const AuthProvider = ({ children }: PropsWithChildren): JSX.Element => {
       authAvailable,
       signIn,
       signUp,
+      sendPasswordReset,
       signOut,
       getIdToken
     }),
-    [authAvailable, firebaseUser, getIdToken, initializing, signIn, signOut, signUp]
+    [authAvailable, firebaseUser, getIdToken, initializing, signIn, signOut, signUp, sendPasswordReset]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
