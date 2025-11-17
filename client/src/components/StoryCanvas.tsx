@@ -56,7 +56,7 @@ const StoryCanvas = () => {
           storyBeats.map((beat) => (
             <article key={beat.id} className="story-beat">
               <div className="story-panel story-panel--player">
-                <header>Hero</header>
+                <header>{hero?.name ?? 'Hero'}</header>
                 <p>{beat.playerAction}</p>
               </div>
               <div className="story-panel story-panel--narrator">

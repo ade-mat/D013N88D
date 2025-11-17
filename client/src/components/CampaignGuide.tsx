@@ -23,15 +23,29 @@ const CampaignGuide = () => {
 
   const characters = useMemo(() => campaign.characters ?? [], [campaign.characters]);
 
+  const tagGroups = {
+    present: 'Currently with you',
+    party: 'Allies in your network',
+    enemy: 'Known enemies'
+  };
+
   return (
     <section className="campaign-guide">
       <header>
-        <h3>Allies & Adversaries</h3>
-        <p className="muted">Track who walks beside you—and who opposes you.</p>
+        <div>
+          <h3>Allies & Adversaries</h3>
+          <p className="muted">Track who walks beside you—and who opposes you.</p>
+        </div>
+        <div className="campaign-guide__legend">
+          {Object.entries(tagGroups).map(([tone, label]) => (
+            <span key={tone} className={`character-tag character-tag--${tone}`}>
+              {label}
+            </span>
+          ))}
+        </div>
       </header>
 
       <div className="campaign-guide__section">
-        <h4>Key Characters</h4>
         <ul>
           {characters.map((character) => {
             const tag =
@@ -40,13 +54,14 @@ const CampaignGuide = () => {
               <li key={character.id}>
                 <div className="character-row">
                   <div>
-                    <strong>{character.name}</strong> <span>— {character.role}</span>
+                    <strong>{character.name}</strong>
+                    <span> {character.role}</span>
                   </div>
-                    {tag && (
-                      <span className={`character-tag character-tag--${tag.tone}`}>
-                        {tag.label}
-                      </span>
-                    )}
+                  {tag && (
+                    <span className={`character-tag character-tag--${tag.tone}`}>
+                      {tag.label}
+                    </span>
+                  )}
                 </div>
                 <p>{character.motivation}</p>
               </li>
