@@ -224,6 +224,29 @@ const createHeroState = (build: CharacterBuild): HeroState => {
   return hero;
 };
 
+const createIntroBeat = (campaign: Campaign): StoryBeat => {
+  const act = campaign.acts[0];
+  const prompts = [
+    'Coordinate the Sentinels holding Ashfen Plaza.',
+    'Check in with Seraphine or Tamsin for guidance.',
+    'Scout the lifts leading up the spire.'
+  ];
+  return {
+    id: `intro-${Date.now().toString(16)}`,
+    playerAction: 'Arrival in Emberfall',
+    narrative:
+      `Ashfen Plaza is ablaze as the Heart of Embers shudders overhead. ${act?.situation ?? 'Citizens scramble while the spire fractures above you.'}`,
+    npcReplies: [
+      {
+        npcId: 'narrator',
+        text: `Try narrating your opening move: ${prompts.join(' • ')}`
+      }
+    ],
+    tags: act ? [act.id] : ['act1'],
+    createdAt: Date.now()
+  };
+};
+
 const applyBeatDelta = (hero: HeroState, beat: StoryBeat): HeroState => {
   if (!beat.delta) {
     return hero;
@@ -334,7 +357,8 @@ export const useGameEngine = (
     (build: CharacterBuild) => {
       const nextHero = createHeroState(build);
       setHero(nextHero);
-      setStoryBeats([]);
+      const introBeat = createIntroBeat(campaign);
+      setStoryBeats([introBeat]);
       setStoryError(null);
       appendLog(
         buildLogEntry(
@@ -343,6 +367,12 @@ export const useGameEngine = (
           `Hero: ${nextHero.name} • ${ABILITY_LABEL.strength} ${nextHero.abilityScores.strength}`
         )
       );
+      appendLog(buildLogEntry('narration', introBeat.narrative));
+      if (introBeat.npcReplies[0]) {
+        appendLog(
+          buildLogEntry('effect', `Prompt`, introBeat.npcReplies[0]?.text ?? '')
+        );
+      }
     },
     [appendLog]
   );

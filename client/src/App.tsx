@@ -6,6 +6,7 @@ import LogPanel from '@/components/LogPanel';
 import Epilogue from '@/components/Epilogue';
 import StoryCanvas from '@/components/StoryCanvas';
 import CampaignGuide from '@/components/CampaignGuide';
+import WorldMap from '@/components/WorldMap';
 import AuthPanel from '@/components/AuthPanel';
 import { useAuth } from '@/context/AuthContext';
 import type { Campaign } from '@/types';
@@ -68,6 +69,7 @@ const GameShell = ({
             <StoryCanvas />
           </section>
           <section className="secondary-panel">
+            <WorldMap variant="sidebar" />
             <CampaignGuide />
             <Sidebar />
             <LogPanel />
