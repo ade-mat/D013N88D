@@ -20,7 +20,8 @@ RUN --mount=type=secret,id=vite_client_env \
     npm run build --prefix client \
   && npm run build --prefix server \
   && mkdir -p dist/client \
-  && cp -r client/dist/. dist/client/
+  && cp -r client/dist/. dist/client/ \
+  && npm prune --omit=dev
 
 
 FROM node:20-alpine AS runner

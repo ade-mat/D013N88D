@@ -1,21 +1,21 @@
 # Emberfall Ascent – Solo D&D Adventure
 
-Emberfall Ascent is a single-player narrative RPG inspired by tabletop D&D. Build a lone hero with authentic 5e-style character creation, roll ability checks against dynamic DCs, and guide them through a three-act campaign to reclaim the Heart of Embers before the floating spire collapses on the city below.
+Emberfall Ascent is a single-player narrative RPG inspired by tabletop D&D. Build a lone hero with authentic 5e-style character creation, then guide them through a three-act campaign by describing any action you want to attempt. The client and server feed those free-form moves plus the campaign primers into Google Cloud’s Vertex AI to determine what happens next inside Emberfall’s collapsing spire.
 
 ## Campaign & Feature Highlights
 
 - **Setting & stakes:** Emberfall is a cliffside city beneath a shattered astral spire. Each act pushes you closer to stabilising (or shattering) the Heart while the city fractures around you.
 - **5e-style hero builder:** Choose a race, class, and background, allocate ability scores, pick proficiencies, and automatically derive armor class, speed, equipment, and features from shared reference data.
-- **Scene engine:** Story nodes, branching choices, and consequence tracking live in `shared/`. Ability checks (d20 + modifiers) can adjust stress, wounds, influence, and corruption, unlock allies, or change endings.
-- **Allied Channel:** The in-app conversation panel lets you message Seraphine, Tamsin, Marek, Nerrix, or Lirael. The server-side oracle (`POST /api/oracle`) crafts responses based on the hero’s flags/status, and the client falls back to scripted dialogue if the endpoint is offline.
-- **Manual Dice Tray & Log:** Resolve every skill check yourself inside the Dice Tray, view advantage/disadvantage math, and keep a running campaign log for transparency.
-- **Offline-first data:** The client bundles the campaign JSON and uses it automatically if `/api/campaign` can’t be reached. Saves fall back to browser storage whenever Firebase isn’t configured or the player skips sign-in.
+- **Flexible StoryCanvas:** Instead of branching buttons, type any action or line of dialogue. The StoryCanvas streams recent beats plus the campaign blueprint to Vertex AI, which returns the next narrative beat, NPC replies, and optional state updates.
+- **Campaign Guide:** Sidebars summarise the key acts, characters, and lore so players remember the stakes while improvising.
+- **Living log:** Every action, AI reply, and state mutation lands in the story log for transparency. Hero sheets update automatically whenever the oracle adjusts stress, flags, or allies.
+- **Offline-first data:** The client bundles the campaign JSON and uses it automatically if `/api/campaign` can’t be reached. Saves fall back to browser storage whenever Firebase isn’t configured or the player skips sign-in. If the AI endpoint is offline the client generates a deterministic fallback narration so play never fully stalls.
 
 ## Tech Stack
 
 - **Client:** React 18 + TypeScript via Vite. Context providers (`client/src/context/`) coordinate hero state, authentication, and persistence.
-- **State management:** `useGameEngine` centralises character creation, scene progression, dice, log history, and persistence adapters (local storage or remote Firestore).
-- **Server:** Express 4 (TypeScript via `ts-node-dev` during development) exposes `/api/health`, `/api/campaign`, `/api/oracle`, and `/api/progress`. NPC replies are generated locally—no external AI calls.
+- **State management:** `useGameEngine` centralises character creation, free-form story beats, AI orchestration, log history, and persistence adapters (local storage or remote Firestore).
+- **Server:** Express 4 (TypeScript via `ts-node-dev` during development) exposes `/api/health`, `/api/campaign`, `/api/story/advance`, and `/api/progress`. `storyEngine` builds prompts for Vertex AI (Gemini) and falls back to deterministic narration when the model is offline.
 - **Shared modules:** `shared/` contains campaign data, reference tables, and types that both the client and server import directly (see the path aliases in each `tsconfig.json`).
 - **Tooling:** npm workspaces, ESLint + TypeScript for the client, and a multi-stage Dockerfile targeting Node 20. GitHub Actions (`.github/workflows/build.yml`) builds the container and deploys to Cloud Run with Firebase secrets injected at build/deploy time.
 
@@ -23,7 +23,7 @@ Emberfall Ascent is a single-player narrative RPG inspired by tabletop D&D. Buil
 
 ```
 ├── client/                     # React UI (Vite + SWC)
-├── server/                     # Express API, Firebase persistence, NPC oracle
+├── server/                     # Express API, Firebase persistence, AI story engine
 ├── shared/                     # Campaign data + shared types
 ├── lessons/                    # Onboarding notes (overview, client tour, server tour)
 ├── .github/workflows/build.yml # Cloud Run deployment pipeline
@@ -36,9 +36,9 @@ Emberfall Ascent is a single-player narrative RPG inspired by tabletop D&D. Buil
 ### Notable Client Components
 
 - `CharacterCreator` – multi-step builder for race, class, background, ability scores, proficiencies, and allied hooks.
-- `SceneView` – renders narrative beats, applies choice effects, and triggers ability checks from `shared/campaign.ts`.
-- `ConversationPanel` – Allied Channel UI tied to the `/api/oracle` endpoint with graceful offline fallbacks.
-- `DiceTray`, `Sidebar`, `LogPanel` – utilities for quick rolls, sheet-style readouts, status tracking, inventory, allies, and campaign history.
+- `StoryCanvas` – streams the player’s free-form actions plus campaign anchors to the AI oracle, then renders each beat and dialogue reply.
+- `CampaignGuide` & `Sidebar` – highlight the current act, characters, hero sheet, and inventory so the player always understands the state.
+- `LogPanel` – chronological audit of every action, reply, and flag/status update generated by the oracle.
 - `Epilogue` – surfaces act outcomes based on flags such as `heart_cleansed`, `nerrix_rescued`, or `marek_support`.
 
 ## Quick Start
@@ -56,13 +56,28 @@ npm run dev --prefix client
 
 The Vite dev server proxies `/api/*` calls to the Express process. If the API isn’t reachable, the client automatically switches to the bundled campaign data and displays an “Offline mode” banner.
 
-### Manual Dice Workflow
+### Free-Form Story Workflow
 
-1. Pick a scene option that requires a skill/ability check. The choice is logged immediately but the scene locks until you roll.
-2. A banner in `SceneView` explains which check is pending (e.g., *Stealth (Dex) vs DC 14*) and the Dice Tray switches into **Resolve Skill Check** mode.
-3. Roll the dice in-app: the Tray automatically applies advantage/disadvantage, shows the modifiers that will be added, and logs the result for the campaign history.
-4. Once you hit **Roll Skill Check**, the engine applies the success/failure outcome, updates hero stats, and unlocks the next set of options.
-5. Outside of encounters, you can switch the Tray back to freestyle dice (d4–d100) for any ad‑hoc rolls you want to make.
+1. Create a hero, then open the StoryCanvas.
+2. Type anything you would attempt in a tabletop session—actions, dialogue, plans, or emotional beats.
+3. The client sends the action, hero snapshot, recent beats, and the campaign blueprint to `/api/story/advance`.
+4. The server’s `storyEngine` builds a structured prompt and calls Vertex AI (Gemini). The JSON reply contains the next narrative beat, NPC dialogue, and optional state deltas (status, flags, allies, notes).
+5. If Vertex AI is unavailable, the server (and, as a last resort, the client) emits deterministic narrations so the player can keep moving without hard blockers.
+
+## Vertex AI Configuration
+
+`storyEngine` uses Google Cloud Vertex AI (Gemini) for narrative generation.
+
+- Set the following environment variables for the **server** process (local `.env`, Docker args, Cloud Run, etc.):
+  - `GENAI_PROJECT_ID`: Google Cloud project that hosts Vertex AI (defaults to `FIREBASE_PROJECT_ID` if omitted).
+  - `GENAI_LOCATION`: Vertex AI region (defaults to `us-central1`).
+  - `GENAI_MODEL`: Model name, e.g., `gemini-1.5-pro`.
+  - `GENAI_RATE_LIMIT_WINDOW_MS` *(optional)*: override the in-process rate-limit window (default 60 s).  
+  - `GENAI_RATE_LIMIT_MAX_CALLS` *(optional)*: override how many Vertex requests may occur within the window (default 40).
+- Provide credentials via Application Default Credentials (recommended for Cloud Run) or by pointing `GOOGLE_APPLICATION_CREDENTIALS` to a service-account JSON. The same service account can also drive Firebase Admin by storing its JSON (or base64) in `FIREBASE_SERVICE_ACCOUNT`.
+- These variables are consumed inside `server/src/lib/storyEngine.ts`: the prompt builder reads the campaign blueprint, and `generateStoryBeat` invokes Vertex AI with the configured project/model while the in-process limiter ensures you never exceed your quota. The endpoint `/api/story/advance` wires player actions → story beats via that helper.
+- When the env vars or credentials are missing, the server instantly falls back to deterministic narration, so local development works without cloud access.
+- `/api/story/advance` only sends the last few beats, the hero snapshot, and the campaign blueprint—no player account identifiers are shared with the model.
 
 ## Core Scripts
 
@@ -77,7 +92,7 @@ The Vite dev server proxies `/api/*` calls to the Express process. If the API is
 
 ## Firebase Authentication & Cloud Saves
 
-The client uses Firebase Authentication (Email/Password) and calls `/api/progress` with a bearer token. The server verifies tokens via the Firebase Admin SDK and persists the hero state per user in Firestore. When auth isn’t configured or the player taps “Continue without an account,” the client stays in guest mode and uses `localStorage` (`emberfall-ascent-save-v2`).
+The client uses Firebase Authentication (Email/Password) and calls `/api/progress` with a bearer token. The server verifies tokens via the Firebase Admin SDK and persists the hero state per user in Firestore. When auth isn’t configured or the player taps “Continue without an account,” the client stays in guest mode and uses `localStorage` (`emberfall-ascent-save-v3`).
 
 1. **Client SDK config:** create `client/.env` (or `.env.local`) with your Firebase web app keys.
    ```bash
@@ -139,13 +154,13 @@ The Dockerfile never bakes Firebase secrets into layers. Instead, it expects a B
 
 ### Cloud Run pipeline
 
-`.github/workflows/build.yml` authenticates via Workload Identity, builds the Docker image, pushes it to Artifact Registry, and deploys to Cloud Run (`CLOUD_RUN_SERVICE=dnd`). Secrets provide the `VITE_*` build arguments plus the service-account JSON (base64-encoded) for the runtime environment variables `FIREBASE_SERVICE_ACCOUNT` and `FIREBASE_PROJECT_ID`.
+`.github/workflows/build.yml` authenticates via Workload Identity, builds the Docker image, pushes it to Artifact Registry, and deploys to Cloud Run (`CLOUD_RUN_SERVICE=dnd`). Secrets provide the `VITE_*` build arguments plus the service-account JSON (base64-encoded) for the runtime environment variables `FIREBASE_SERVICE_ACCOUNT`, `FIREBASE_PROJECT_ID`, and the Vertex AI configuration (`GENAI_PROJECT_ID`, `GENAI_LOCATION`, `GENAI_MODEL`).
 
 ## Testing & Manual Verification
 
 1. Run both dev servers (`npm run dev` and `npm run dev --prefix client`) and open `http://localhost:5173`.
-2. Create a hero, progress through all three acts, and confirm that dice rolls adjust stress, wounds, influence, corruption, and narrative branches.
-3. Trigger the Allied Channel to ensure `/api/oracle` responds and that the client shows the scripted fallback if you stop the server.
+2. Create a hero, submit a variety of free-form actions, and observe that Vertex AI (or the deterministic fallback) returns beats that update hero flags/status when appropriate.
+3. Stop the server to confirm the client logs the offline fallback narration, then restart and ensure `/api/story/advance` resumes normal responses.
 4. Toggle guest mode vs. Firebase-authenticated mode to confirm saves land in local storage or Firestore (`/api/progress` endpoints return `2xx`).
 5. Use **Reset Save** to ensure state clears both locally and remotely.
 

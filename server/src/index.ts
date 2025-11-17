@@ -7,8 +7,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { campaignData } from '../../shared/campaign.js';
-import type { Campaign } from '../../shared/types.js';
-import { createOracleResponse } from './lib/npcOracle.js';
+import type { Campaign, StoryAdvanceRequest } from '../../shared/types.js';
+import { generateStoryBeat } from './lib/storyEngine.js';
 import progressRouter from './routes/progress.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -30,41 +30,37 @@ app.get('/api/campaign', (_req, res) => {
   res.json(campaign);
 });
 
-interface HeroPayload {
-  name: string;
-  status?: Record<string, number>;
-  resources?: { hitPoints?: number; tempHitPoints?: number; inspiration?: number };
-  flags?: Record<string, boolean>;
-}
+const storyLimiter = rateLimit({
+  windowMs: 30 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false
+});
 
-app.post('/api/oracle', (req, res) => {
-  const { npcId, prompt, hero } = req.body as {
-    npcId?: string;
-    prompt?: string;
-    hero?: HeroPayload;
-  };
-
-  if (!npcId || !prompt || !hero) {
-    return res.status(400).json({ error: 'npcId, prompt, and hero payload are required.' });
+app.post('/api/story/advance', storyLimiter, async (req, res) => {
+  const payload = req.body as Partial<StoryAdvanceRequest>;
+  if (!payload || typeof payload.action !== 'string' || !payload.hero) {
+    return res.status(400).json({ error: 'action and hero are required.' });
   }
 
-  const reply = createOracleResponse(npcId, prompt, {
-    name: hero.name,
-    status: {
-      stress: hero.status?.stress ?? 0,
-      wounds: hero.status?.wounds ?? 0,
-      influence: hero.status?.influence ?? 0,
-      corruption: hero.status?.corruption ?? 0
-    },
-    resources: {
-      hitPoints: hero.resources?.hitPoints ?? 10,
-      tempHitPoints: hero.resources?.tempHitPoints ?? 0,
-      inspiration: hero.resources?.inspiration ?? 0
-    },
-    flags: hero.flags ?? {}
-  });
+  const trimmedAction = payload.action.trim();
+  if (!trimmedAction) {
+    return res.status(400).json({ error: 'action must be a non-empty string.' });
+  }
 
-  res.json({ reply });
+  const beats = Array.isArray(payload.beats) ? payload.beats.slice(-6) : [];
+
+  try {
+    const beat = await generateStoryBeat(
+      { action: trimmedAction, hero: payload.hero, beats },
+      campaign
+    );
+    return res.json({ beat });
+  } catch (error) {
+    return res.status(500).json({
+      error: 'Unable to advance story at this time.'
+    });
+  }
 });
 
 app.use('/api/progress', progressRouter);

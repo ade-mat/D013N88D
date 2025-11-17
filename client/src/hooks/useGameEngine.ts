@@ -1,17 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type {
   Ability,
   Campaign,
-  ConversationTurn,
   GameStateSnapshot,
   HeroResources,
   HeroState,
   LogEntry,
-  SceneChoice,
-  SceneEffect,
-  SceneNode,
-  SceneOutcome,
-  Skill
+  Skill,
+  StoryAdvanceResponse,
+  StoryBeat
 } from '@/types';
 import { campaignData } from '@shared/campaign';
 import {
@@ -22,16 +19,10 @@ import {
   RACE_DEFINITIONS,
   SKILLS
 } from '@shared/referenceData';
-import {
-  CheckRollResult,
-  CheckRollOptions,
-  formatCheckSummary,
-  rollAbilityCheck
-} from '@/utils/dice';
 
 export type StoredState = GameStateSnapshot;
 
-const LOCAL_STORAGE_KEY = 'emberfall-ascent-save-v2';
+const LOCAL_STORAGE_KEY = 'emberfall-ascent-save-v3';
 
 export interface GamePersistence {
   load: () => Promise<StoredState | null>;
@@ -126,10 +117,10 @@ export interface CharacterBuild {
 }
 
 const createHeroState = (build: CharacterBuild): HeroState => {
-  const race = RACE_DEFINITIONS.find((entry) => entry.id === build.raceId) ??
-    RACE_DEFINITIONS[0];
-  const klass = CLASS_DEFINITIONS.find((entry) => entry.id === build.classId) ??
-    CLASS_DEFINITIONS[0];
+  const race =
+    RACE_DEFINITIONS.find((entry) => entry.id === build.raceId) ?? RACE_DEFINITIONS[0];
+  const klass =
+    CLASS_DEFINITIONS.find((entry) => entry.id === build.classId) ?? CLASS_DEFINITIONS[0];
   const background =
     BACKGROUND_DEFINITIONS.find((entry) => entry.id === build.backgroundId) ??
     BACKGROUND_DEFINITIONS[0];
@@ -146,7 +137,7 @@ const createHeroState = (build: CharacterBuild): HeroState => {
     {} as Record<Ability, number>
   );
 
-  const proficiencyBonus = 2; // Level 1 baseline.
+  const proficiencyBonus = 2;
 
   const savingThrows = ABILITIES.reduce<Record<Ability, boolean>>((acc, ability) => {
     acc[ability] = klass.savingThrows.includes(ability);
@@ -223,9 +214,7 @@ const createHeroState = (build: CharacterBuild): HeroState => {
     languages: Array.from(languages),
     toolProficiencies: Array.from(toolProficiencies),
     spellcastingAbility: klass.spellcastingAbility,
-    spellSlots: klass.spellcastingAbility
-      ? { 1: 2 }
-      : undefined,
+    spellSlots: klass.spellcastingAbility ? { 1: 2 } : undefined,
     notes: build.notes ?? [],
     status: initializeStatus(),
     flags: {},
@@ -235,113 +224,76 @@ const createHeroState = (build: CharacterBuild): HeroState => {
   return hero;
 };
 
-const applyEffect = (hero: HeroState, effect?: SceneEffect): HeroState => {
-  if (!effect) {
+const applyBeatDelta = (hero: HeroState, beat: StoryBeat): HeroState => {
+  if (!beat.delta) {
     return hero;
   }
-
   const updated: HeroState = {
     ...hero,
-    equipment: [...hero.equipment],
-    features: [...hero.features],
-    notes: [...hero.notes],
     status: { ...hero.status },
     flags: { ...hero.flags },
     allies: { ...hero.allies },
+    notes: [...hero.notes],
     resources: { ...hero.resources }
   };
 
-  if (effect.addItems) {
-    effect.addItems.forEach((item) => {
-      if (!updated.equipment.includes(item)) {
-        updated.equipment.push(item);
-      }
-    });
-  }
-
-  if (effect.removeItems) {
-    updated.equipment = updated.equipment.filter(
-      (item) => !effect.removeItems?.includes(item)
-    );
-  }
-
-  if (effect.flags) {
-    Object.entries(effect.flags).forEach(([flag, value]) => {
-      updated.flags[flag] = value;
-    });
-  }
-
-  if (effect.statusAdjust) {
-    Object.entries(effect.statusAdjust).forEach(([key, delta]) => {
+  if (beat.delta.statusAdjust) {
+    Object.entries(beat.delta.statusAdjust).forEach(([key, delta]) => {
       const previous = updated.status[key] ?? 0;
       updated.status[key] = clampStatusValue(key, previous + delta);
     });
   }
 
-  if (effect.allies) {
-    Object.entries(effect.allies).forEach(([ally, status]) => {
-      updated.allies[ally] = status;
+  if (beat.delta.flags) {
+    Object.entries(beat.delta.flags).forEach(([flag, value]) => {
+      updated.flags[flag] = value;
     });
   }
 
-  if (effect.notes) {
-    updated.notes.push(...effect.notes);
+  if (beat.delta.notes) {
+    updated.notes.push(...beat.delta.notes);
   }
 
-  if (effect.resources) {
-    const mergeResource = (key: keyof HeroResources) => {
-      if (typeof effect.resources?.[key] === 'number') {
-        updated.resources[key] = Math.max(0, effect.resources[key]!);
-      }
-    };
-    mergeResource('hitPoints');
-    mergeResource('tempHitPoints');
-    mergeResource('inspiration');
+  if (beat.delta.allies) {
+    Object.entries(beat.delta.allies).forEach(([ally, value]) => {
+      updated.allies[ally] = value;
+    });
   }
 
   return updated;
 };
 
-const getScene = (campaign: Campaign, sceneId: string | null): SceneNode | null => {
-  if (!sceneId) {
-    return null;
-  }
-  return campaign.scenes.find((scene) => scene.id === sceneId) ?? null;
+const buildOfflineBeat = (
+  action: string,
+  campaign: Campaign,
+  beats: StoryBeat[]
+): StoryBeat => {
+  const fallbackAct =
+    beats.at(-1)?.tags?.[0] ??
+    campaign.acts[Math.min(beats.length, campaign.acts.length - 1)]?.id ??
+    'act1';
+  return {
+    id: `offline-${Date.now().toString(16)}`,
+    playerAction: action,
+    narrative: `You ${action}. ${campaign.synopsis} The Heart still trembles, urging you forward.`,
+    npcReplies: [],
+    tags: [fallbackAct],
+    createdAt: Date.now()
+  };
 };
-
-export interface PendingSkillCheck {
-  id: string;
-  label: string;
-  description?: string;
-  ability: Ability;
-  abilityMod: number;
-  skill?: Skill;
-  dc: number;
-  advantage: boolean;
-  disadvantage: boolean;
-  proficient: boolean;
-  proficiencyBonus: number;
-  miscBonus: number;
-}
 
 export interface GameEngine {
   campaign: Campaign;
   hero: HeroState | null;
-  currentScene: SceneNode | null;
-  currentSceneId: string | null;
+  storyBeats: StoryBeat[];
   log: LogEntry[];
-  lastRoll: CheckRollResult | null;
-  visitedScenes: Record<string, number>;
-  conversation: Record<string, ConversationTurn[]>;
-  pendingSkillCheck: PendingSkillCheck | null;
-  startGame: (build: CharacterBuild) => void;
-  chooseOption: (choiceId: string) => void;
-  resetGame: () => void;
-  recordPlayerConversation: (npcId: string, text: string) => void;
-  recordNpcConversation: (npcId: string, text: string) => void;
+  storyLoading: boolean;
+  storyError: string | null;
   isGameComplete: boolean;
   abilityMod: (ability: Ability) => number;
-  rollPendingSkillCheck: () => CheckRollResult | null;
+  startGame: (build: CharacterBuild) => void;
+  submitStoryAction: (action: string) => Promise<void>;
+  resetGame: () => void;
 }
 
 export const useGameEngine = (
@@ -349,31 +301,15 @@ export const useGameEngine = (
   persistence?: GamePersistence
 ): GameEngine => {
   const campaign = remoteCampaign ?? campaignData;
-
   const [hero, setHero] = useState<HeroState | null>(null);
-  const [currentSceneId, setCurrentSceneId] = useState<string | null>(
-    campaign.introSceneId
-  );
+  const [storyBeats, setStoryBeats] = useState<StoryBeat[]>([]);
   const [log, setLog] = useState<LogEntry[]>([]);
-  const [visitedScenes, setVisitedScenes] = useState<Record<string, number>>({});
-  const [lastRoll, setLastRoll] = useState<CheckRollResult | null>(null);
-  const [conversation, setConversation] = useState<
-    Record<string, ConversationTurn[]>
-  >({});
-  const [pendingCheck, setPendingCheck] = useState<{
-    choice: SceneChoice;
-    options: CheckRollOptions;
-  } | null>(null);
+  const [storyLoading, setStoryLoading] = useState(false);
+  const [storyError, setStoryError] = useState<string | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
-  const lastSceneIdRef = useRef<string | null>(null);
   const persistenceImpl = useMemo(
     () => persistence ?? createLocalStoragePersistence(),
     [persistence]
-  );
-
-  const currentScene = useMemo(
-    () => getScene(campaign, currentSceneId),
-    [campaign, currentSceneId]
   );
 
   const abilityMod = useCallback(
@@ -389,335 +325,141 @@ export const useGameEngine = (
   const appendLog = useCallback((entry: LogEntry) => {
     setLog((prev) => {
       const next = [...prev, entry];
-      return next.slice(-150);
+      return next.slice(-200);
     });
   }, []);
 
-  const applyOutcome = useCallback(
-    (outcome: SceneOutcome, heroState: HeroState) => {
-      appendLog(buildLogEntry('narration', outcome.narrative));
-
-      let updatedHero = heroState;
-      if (outcome.effects) {
-        updatedHero = applyEffect(heroState, outcome.effects);
-        if (outcome.effects.notes) {
-          outcome.effects.notes.forEach((note) =>
-            appendLog(buildLogEntry('effect', 'Effect', note))
-          );
-        }
-      }
-
-      setHero(updatedHero);
-      setCurrentSceneId(outcome.nextSceneId);
-      setPendingCheck(null);
-      return updatedHero;
+  const startGame = useCallback(
+    (build: CharacterBuild) => {
+      const nextHero = createHeroState(build);
+      setHero(nextHero);
+      setStoryBeats([]);
+      setStoryError(null);
+      appendLog(
+        buildLogEntry(
+          'system',
+          'Campaign started',
+          `Hero: ${nextHero.name} • ${ABILITY_LABEL.strength} ${nextHero.abilityScores.strength}`
+        )
+      );
     },
     [appendLog]
   );
 
-  const queueSkillCheck = useCallback(
-    (
-      choice: SceneChoice,
-      heroState: HeroState
-    ) => {
-      if (!choice.skillCheck) {
-        return;
-      }
-
-      const { ability, skill, dc, advantageIfFlag, disadvantageIfFlag } =
-        choice.skillCheck;
-
-      const abilityModifier = getAbilityModifier(heroState.abilityScores[ability]);
-      const proficientInSkill = skill ? heroState.skills[skill] === true : false;
-      const miscBonus =
-        heroState.flags['heart_cleansed'] && ability === 'wisdom' ? 1 : 0;
-
-      const options: CheckRollOptions = {
-        ability,
-        abilityMod: abilityModifier,
-        proficiencyBonus: heroState.proficiencyBonus,
-        proficient: proficientInSkill,
-        miscBonus,
-        dc,
-        advantage: advantageIfFlag ? heroState.flags[advantageIfFlag] === true : false,
-        disadvantage: disadvantageIfFlag
-          ? heroState.flags[disadvantageIfFlag] === true
-          : false,
-        skill
-      };
-
-      setPendingCheck({ choice, options });
-    },
-    []
-  );
-
-  const rollPendingSkillCheck = useCallback((): CheckRollResult | null => {
-    if (!pendingCheck || !hero) {
-      return null;
-    }
-
-    const roll = rollAbilityCheck(pendingCheck.options);
-    setLastRoll(roll);
-
-    const skillLabel = pendingCheck.options.skill
-      ? SKILLS.find((entry) => entry.id === pendingCheck.options.skill)?.label ??
-        pendingCheck.options.skill
-      : ABILITY_LABEL[pendingCheck.options.ability];
-    appendLog(
-      buildLogEntry('roll', `Check: ${skillLabel}`, formatCheckSummary(roll))
-    );
-
-    const outcome = roll.success
-      ? pendingCheck.choice.skillCheck?.success
-      : pendingCheck.choice.skillCheck?.failure;
-
-    if (outcome && hero) {
-      applyOutcome(outcome, hero);
-    }
-
-    setPendingCheck(null);
-    return roll;
-  }, [appendLog, applyOutcome, hero, pendingCheck]);
-
-  const chooseOption = useCallback(
-    (choiceId: string) => {
-      if (!hero || !currentScene) {
-        return;
-      }
-
-      if (pendingCheck) {
-        return;
-      }
-
-      const choice = currentScene.options.find((option) => option.id === choiceId);
-      if (!choice) {
-        return;
-      }
-
-      appendLog(buildLogEntry('choice', choice.label, choice.description));
-
-      if (choice.autoSuccess) {
-        applyOutcome(choice.autoSuccess, hero);
-        return;
-      }
-
-      if (choice.skillCheck) {
-        queueSkillCheck(choice, hero);
-      }
-    },
-    [appendLog, applyOutcome, currentScene, hero, pendingCheck, queueSkillCheck]
-  );
-
-  const startGame = useCallback(
-    (build: CharacterBuild) => {
-      const newHero = createHeroState(build);
-      setHero(newHero);
-      setLog([
-        buildLogEntry(
-          'narration',
-          `Welcome, ${newHero.name}`,
-          `${CLASS_DEFINITIONS.find((c) => c.id === newHero.classId)?.name ?? 'Adventurer'} of the ${RACE_DEFINITIONS.find((r) => r.id === newHero.raceId)?.name ?? 'Unknown'} lineage`
-        )
-      ]);
-      setVisitedScenes({});
-      setConversation({});
-      setLastRoll(null);
-      setCurrentSceneId(campaign.introSceneId);
-      setPendingCheck(null);
-      lastSceneIdRef.current = null;
-    },
-    [campaign.introSceneId]
-  );
-
   const resetGame = useCallback(() => {
     setHero(null);
+    setStoryBeats([]);
+    setStoryError(null);
     setLog([]);
-    setVisitedScenes({});
-    setConversation({});
-    setLastRoll(null);
-    setCurrentSceneId(campaign.introSceneId);
-    setPendingCheck(null);
-    lastSceneIdRef.current = null;
-    void persistenceImpl.clear().catch((err) => {
-      // eslint-disable-next-line no-console
-      console.warn('Failed to clear game state', err);
-    });
-  }, [campaign.introSceneId, persistenceImpl]);
-
-  const recordPlayerConversation = useCallback((npcId: string, text: string) => {
-    setConversation((prev) => {
-      const existing = prev[npcId] ?? [];
-      return {
-        ...prev,
-        [npcId]: [...existing, { speaker: 'player', text }]
-      };
-    });
-  }, []);
-
-  const recordNpcConversation = useCallback((npcId: string, text: string) => {
-    setConversation((prev) => {
-      const existing = prev[npcId] ?? [];
-      return {
-        ...prev,
-        [npcId]: [...existing, { speaker: 'npc', text }]
-      };
-    });
-  }, []);
-
-  useEffect(() => {
-    setHasLoaded((prev) => (prev ? false : prev));
+    void persistenceImpl.clear();
   }, [persistenceImpl]);
 
-  useEffect(() => {
-    if (hasLoaded) {
-      return;
+  const submitStoryAction = useCallback(
+    async (action: string) => {
+      if (!hero) {
+        return;
+      }
+      const trimmed = action.trim();
+      if (!trimmed) {
+        return;
+      }
+
+      appendLog(buildLogEntry('action', hero.name, trimmed));
+      setStoryLoading(true);
+      setStoryError(null);
+
+      try {
+        const response = await fetch('/api/story/advance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: trimmed,
+            hero,
+            beats: storyBeats.slice(-6)
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('oracle-offline');
+        }
+
+        const payload = (await response.json()) as StoryAdvanceResponse;
+        const beat = payload.beat;
+        setStoryBeats((prev) => [...prev, beat].slice(-25));
+        if (beat.delta) {
+          setHero((prev) => (prev ? applyBeatDelta(prev, beat) : prev));
+        }
+        appendLog(buildLogEntry('narration', beat.narrative));
+        beat.npcReplies.forEach((reply) => {
+          appendLog(buildLogEntry('effect', `Reply from ${reply.npcId}`, reply.text));
+        });
+      } catch (error) {
+        setStoryError('Oracle offline — weaving local narration.');
+        const fallback = buildOfflineBeat(trimmed, campaign, storyBeats);
+        setStoryBeats((prev) => [...prev, fallback].slice(-25));
+        appendLog(buildLogEntry('narration', fallback.narrative));
+      } finally {
+        setStoryLoading(false);
+      }
+    },
+    [appendLog, campaign, hero, storyBeats]
+  );
+
+  const isGameComplete = useMemo(() => {
+    if (!hero) {
+      return false;
     }
+    if (storyBeats.some((beat) => beat.delta?.isEnding)) {
+      return true;
+    }
+    return Boolean(hero.flags.heart_cleansed || hero.flags.heart_shattered);
+  }, [hero, storyBeats]);
 
-    let cancelled = false;
-
-    const loadState = async () => {
+  useEffect(() => {
+    let isMounted = true;
+    const restore = async () => {
       try {
         const stored = await persistenceImpl.load();
-        if (cancelled) {
-          return;
-        }
-        if (stored) {
-          setHero(stored.hero ?? null);
-          setCurrentSceneId(stored.currentSceneId ?? campaign.introSceneId);
+        if (stored && isMounted) {
+          setHero(stored.hero);
+          setStoryBeats(stored.storyBeats ?? []);
           setLog(stored.log ?? []);
-          setVisitedScenes(stored.visitedScenes ?? {});
-          setConversation(stored.conversation ?? {});
-        } else {
-          setHero(null);
-          setCurrentSceneId(campaign.introSceneId);
-          setLog([]);
-          setVisitedScenes({});
-          setConversation({});
-        }
-      } catch (err) {
-        if (!cancelled) {
-          // eslint-disable-next-line no-console
-          console.warn('Failed to load game state', err);
         }
       } finally {
-        if (!cancelled) {
+        if (isMounted) {
           setHasLoaded(true);
         }
       }
     };
-
-    void loadState();
-
+    void restore();
     return () => {
-      cancelled = true;
+      isMounted = false;
     };
-  }, [campaign.introSceneId, hasLoaded, persistenceImpl]);
+  }, [persistenceImpl]);
 
   useEffect(() => {
     if (!hasLoaded) {
       return;
     }
-
-    const state: StoredState = {
+    const snapshot: StoredState = {
       hero,
-      currentSceneId,
-      log,
-      visitedScenes,
-      conversation
+      storyBeats,
+      log
     };
-
-    void persistenceImpl.save(state).catch((err) => {
-      // eslint-disable-next-line no-console
-      console.warn('Failed to persist game state', err);
-    });
-  }, [
-    conversation,
-    currentSceneId,
-    hero,
-    log,
-    persistenceImpl,
-    visitedScenes,
-    hasLoaded
-  ]);
-
-  useEffect(() => {
-    if (!hero || !currentSceneId) {
-      return;
-    }
-
-    if (lastSceneIdRef.current === currentSceneId) {
-      return;
-    }
-
-    lastSceneIdRef.current = currentSceneId;
-
-    const scene = getScene(campaign, currentSceneId);
-    if (!scene) {
-      return;
-    }
-
-    setVisitedScenes((prev) => ({
-      ...prev,
-      [scene.id]: (prev[scene.id] ?? 0) + 1
-    }));
-
-    const onEnter = scene.onEnter;
-    if (onEnter) {
-      setHero((prevHero) => {
-        if (!prevHero) {
-          return prevHero;
-        }
-        const nextHero = applyEffect(prevHero, onEnter);
-        if (onEnter.notes && onEnter.notes.length > 0) {
-          onEnter.notes.forEach((note) =>
-            appendLog(buildLogEntry('narration', 'Insight', note))
-          );
-        }
-        return nextHero;
-      });
-    }
-  }, [appendLog, campaign, currentSceneId, hero]);
-
-  const pendingSkillCheck = useMemo<PendingSkillCheck | null>(() => {
-    if (!pendingCheck) {
-      return null;
-    }
-    const { choice, options } = pendingCheck;
-    return {
-      id: choice.id,
-      label: choice.label,
-      description: choice.description,
-      ability: options.ability,
-      abilityMod: options.abilityMod,
-      skill: options.skill,
-      dc: options.dc,
-      advantage: Boolean(options.advantage),
-      disadvantage: Boolean(options.disadvantage),
-      proficient: Boolean(options.proficient),
-      proficiencyBonus: options.proficiencyBonus,
-      miscBonus: options.miscBonus ?? 0
-    };
-  }, [pendingCheck]);
-
-  const isGameComplete = currentSceneId === null;
+    void persistenceImpl.save(snapshot);
+  }, [hero, storyBeats, log, hasLoaded, persistenceImpl]);
 
   return {
     campaign,
     hero,
-    currentScene,
-    currentSceneId,
+    storyBeats,
     log,
-    lastRoll,
-    visitedScenes,
-    conversation,
-    pendingSkillCheck,
-    startGame,
-    chooseOption,
-    resetGame,
-    recordPlayerConversation,
-    recordNpcConversation,
+    storyLoading,
+    storyError,
     isGameComplete,
     abilityMod,
-    rollPendingSkillCheck
+    startGame,
+    submitStoryAction,
+    resetGame
   };
 };

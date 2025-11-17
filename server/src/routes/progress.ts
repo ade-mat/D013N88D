@@ -28,12 +28,7 @@ const isValidState = (candidate: unknown): candidate is GameStateSnapshot => {
     return false;
   }
   const value = candidate as Partial<GameStateSnapshot>;
-  return (
-    'currentSceneId' in value &&
-    'log' in value &&
-    'visitedScenes' in value &&
-    'conversation' in value
-  );
+  return 'log' in value && 'storyBeats' in value && Array.isArray(value.storyBeats) && 'hero' in value;
 };
 
 router.get('/', requireFirebaseAuth, limiter, async (req, res) => {

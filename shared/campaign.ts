@@ -1,1290 +1,157 @@
-import { Campaign } from './types.js';
+import type { Campaign } from './types.js';
 
 export const campaignData: Campaign = {
   id: 'emberfall-ascent',
   title: 'Emberfall Ascent',
   synopsis:
-    'A lone hero races through the fractured city of Emberfall to reclaim the Heart of Embers before the floating spire collapses and consumes the city in astral fire.',
-  introSceneId: 'intro_arrival',
+    'Emberfall is a cliff city pinned beneath a hovering astral spire. The Heart of Embers is destabilising and threatens to shatter the city in a wave of astral fire unless a lone hero intervenes.',
+  tone: 'Hopeful dark fantasy with tactile D&D stakes and cinematic pacing.',
   guidance: [
-    'Create your hero with full D&D flavor—pick a race, class, and background, then assign ability scores.',
-    'Checks roll a d20 plus ability modifiers and proficiency when appropriate; advantage and disadvantage still apply.',
-    'Status tracks like stress, wounds, influence, and corruption evolve through play and colour the finale.'
+    'Let the player attempt any action. The AI narrator should interpret intent, roll forward consequences, and keep momentum.',
+    'Always ground replies in the key characters and the city’s imminent danger. Remind the player of the collapsing spire when needed.',
+    'Keep scenes punchy: describe the immediate beat, what changes, and what options feel dramatically potent next.'
   ],
-  map: {
-    width: 100,
-    height: 120,
-    description:
-      'Emberfall is a tiered cliff city beneath a fractured spire. The journey climbs from the Ashfen Plaza through ritual lifts and maintenance shafts to the Heart itself.',
-    locations: [
-      {
-        id: 'emberfall_terraces',
-        name: 'Emberfall Terraces',
-        summary: 'Survivors gather across the lower terraces, waiting to see if the city endures.',
-        position: { x: 12, y: 110 },
-        tier: 'city',
-        sceneIds: ['epilogue_resolution'],
-        connections: ['emberfall_market', 'spire_cascade']
-      },
-      {
-        id: 'emberfall_market',
-        name: 'Ashfen Plaza',
-        summary: 'The main market below the hovering spire. Fires, refugees, and rumors collide here.',
-        position: { x: 34, y: 96 },
-        tier: 'city',
-        sceneIds: ['intro_arrival', 'marek_clash', 'market_crossroads'],
-        connections: [
-          'lantern_sanctum',
-          'tamsin_workshop',
-          'sentinel_command',
-          'spire_base',
-          'emberfall_terraces'
-        ]
-      },
-      {
-        id: 'lantern_sanctum',
-        name: 'Lantern Sanctum',
-        summary: 'Seraphine’s incense-draped divination hall tucked off the plaza.',
-        position: { x: 10, y: 86 },
-        tier: 'city',
-        sceneIds: ['seraphine_sanctum'],
-        connections: ['emberfall_market']
-      },
-      {
-        id: 'tamsin_workshop',
-        name: 'Smoke-Bend Workshop',
-        summary: 'Tamsin’s tinkering nook lit by sputtering coils and half-built gadgets.',
-        position: { x: 22, y: 84 },
-        tier: 'city',
-        sceneIds: ['tamsin_workshop'],
-        connections: ['emberfall_market']
-      },
-      {
-        id: 'sentinel_command',
-        name: 'Sentinel Bastion',
-        summary: 'Captain Thorne’s command rostrum overlooking the evacuation routes.',
-        position: { x: 52, y: 88 },
-        tier: 'city',
-        sceneIds: ['throne_command'],
-        connections: ['emberfall_market']
-      },
-      {
-        id: 'spire_base',
-        name: 'Shardspire Base',
-        summary: 'Crumbling lifts and barricaded ramps that access the spire’s underbelly.',
-        position: { x: 60, y: 74 },
-        tier: 'approach',
-        sceneIds: ['spire_approach'],
-        connections: ['emberfall_market', 'etheric_lift', 'maintenance_shaft']
-      },
-      {
-        id: 'etheric_lift',
-        name: 'Etheric Lift',
-        summary: 'A ritual elevator that threads the astral storm coiling around the spire.',
-        position: { x: 68, y: 58 },
-        tier: 'spire',
-        sceneIds: ['etheric_lift'],
-        connections: ['spire_base', 'nerrix_hold', 'mid_spire_plaza']
-      },
-      {
-        id: 'maintenance_shaft',
-        name: 'Maintenance Chasm',
-        summary: 'Ozone-laced service tunnels packed with arcing conduits.',
-        position: { x: 48, y: 58 },
-        tier: 'approach',
-        sceneIds: ['maintenance_shaft'],
-        connections: ['spire_base', 'sentry_gauntlet', 'mid_spire_plaza']
-      },
-      {
-        id: 'sentry_gauntlet',
-        name: 'Arc-Sentry Gauntlet',
-        summary: 'Dormant sentries prowl this choke point, ready to shred intruders.',
-        position: { x: 44, y: 46 },
-        tier: 'spire',
-        sceneIds: ['sentry_skirmish'],
-        connections: ['maintenance_shaft', 'mid_spire_plaza']
-      },
-      {
-        id: 'nerrix_hold',
-        name: 'Containment Annex',
-        summary: 'A dim auxiliary cell where Nerrix hangs trapped in stasis.',
-        position: { x: 74, y: 46 },
-        tier: 'spire',
-        sceneIds: ['nerrix_cell'],
-        connections: ['etheric_lift', 'mid_spire_plaza']
-      },
-      {
-        id: 'mid_spire_plaza',
-        name: 'Mid-Spire Plaza',
-        summary: 'Broken terraces orbiting the Heart’s chamber amidst violent arcs.',
-        position: { x: 60, y: 36 },
-        tier: 'spire',
-        sceneIds: ['spire_midway'],
-        connections: [
-          'etheric_lift',
-          'maintenance_shaft',
-          'sentry_gauntlet',
-          'nerrix_hold',
-          'heart_antechamber'
-        ]
-      },
-      {
-        id: 'heart_antechamber',
-        name: 'Heart Antechamber',
-        summary: 'A whispering hall of statues and wards that buffer the Heart’s radiance.',
-        position: { x: 68, y: 24 },
-        tier: 'heart',
-        sceneIds: ['heart_antechamber'],
-        connections: ['mid_spire_plaza', 'heart_chamber']
-      },
-      {
-        id: 'heart_chamber',
-        name: 'Heart of Embers',
-        summary: 'Lirael guards the unstable Heart amid shards of suspended stone.',
-        position: { x: 70, y: 12 },
-        tier: 'heart',
-        sceneIds: ['heart_chamber'],
-        connections: ['heart_antechamber', 'spire_cascade']
-      },
-      {
-        id: 'spire_cascade',
-        name: 'Cascade Run',
-        summary: 'A perilous descent of collapsing bridges once the Heart destabilizes.',
-        position: { x: 58, y: 6 },
-        tier: 'heart',
-        sceneIds: ['escape_gauntlet'],
-        connections: ['heart_chamber', 'emberfall_terraces']
-      }
-    ]
-  },
-  scenes: [
+  themes: [
+    'Sacrifice vs. salvation',
+    'Mortal ingenuity in the face of astral power',
+    'Alliances built in chaos'
+  ],
+  acts: [
     {
-      id: 'intro_arrival',
-      title: 'Smoke Over Emberfall',
-      narrative:
-        'You arrive beneath the hovering shards of the shattered spire. Sparks rain on the market square while citizens flee toward the lower terraces. The Heart of Embers pulses overhead, unstable and keening. You have one chance to claim it before the spire collapses.',
-      locationId: 'emberfall_market',
-      options: [
-        {
-          id: 'intro_seek_seraphine',
-          label: 'Seek out Seraphine Voss, the seer who summoned you.',
-          autoSuccess: {
-            id: 'outcome_seraphine_meeting',
-            nextSceneId: 'seraphine_sanctum',
-            narrative:
-              'You slip through a side alley to the Lantern Sanctum. Seraphine waits amid swirling incense, eyes aglow with premonitions.',
-            effects: {
-              flags: { met_seraphine: true },
-              allies: { seraphine: 'ally' },
-              addItems: ['Seer’s Charm']
-            }
-          }
-        },
-        {
-          id: 'intro_seek_tamsin',
-          label: 'Track down Tamsin Quickwick for a gadget-laden approach.',
-          autoSuccess: {
-            id: 'outcome_tamsin_meeting',
-            nextSceneId: 'tamsin_workshop',
-            narrative:
-              'You duck into the gear-cluttered nook beneath the bridge district. Tamsin wipes grease from her goggles and grins.',
-            effects: {
-              flags: { met_tamsin: true },
-              allies: { tamsin: 'ally' },
-              addItems: ['Grapple Launcher']
-            }
-          }
-        },
-        {
-          id: 'intro_report_thorne',
-          label: 'Report to Captain Marek Thorne to secure official support.',
-          skillCheck: {
-            ability: 'charisma',
-            skill: 'persuasion',
-            dc: 14,
-            advantageIfFlag: 'met_seraphine',
-            success: {
-              id: 'outcome_thorne_aid',
-              nextSceneId: 'throne_command',
-              narrative:
-                'Thorne reads urgency in your gesture. He grants a squad marker and whispers about a hidden sentinel route into the spire.',
-              effects: {
-                flags: { marek_support: true },
-                allies: { marek: 'ally' },
-                addItems: ['Sentinel Badge'],
-                statusAdjust: { influence: 1 }
-              }
-            },
-            failure: {
-              id: 'outcome_thorne_suspicion',
-              nextSceneId: 'marek_clash',
-              narrative:
-                'Suspicion flashes across Thorne’s scarred face. He orders you shadowed, complicating your next move.',
-              effects: {
-                flags: { marek_suspicious: true },
-                statusAdjust: { stress: 1 }
-              }
-            }
-          }
-        }
+      id: 'act1',
+      title: 'Ashfen Sparks',
+      situation:
+        'Fires rip across the Ashfen Plaza as refugees stream from the terraces. Sentinel forces hold lines while cultists try to rush the elevators.',
+      objectives: [
+        'Stabilise the plaza and earn Marek Thorne’s begrudging trust.',
+        'Gather intel from Seraphine or salvage tech from Tamsin for the climb.',
+        'Choose whether to prioritise the citizens or the ascent.'
       ],
-      onEnter: {
-        statusAdjust: { stress: 1 },
-        notes: ['The city is already on edge. Time is short.']
-      }
-    },
-    {
-      id: 'seraphine_sanctum',
-      title: 'The Lantern Sanctum',
-      narrative:
-        'Seraphine traces a sigil in the air, revealing flickers of possible futures. “The Heart sings to you,” she murmurs. “But it also listens. Choose your steps wisely.”',
-      locationId: 'lantern_sanctum',
-      options: [
-        {
-          id: 'seraphine_vision',
-          label: 'Accept a guided vision of the spire.',
-          skillCheck: {
-            ability: 'wisdom',
-            skill: 'insight',
-            dc: 13,
-            success: {
-              id: 'outcome_seraphine_vision_success',
-              nextSceneId: 'market_crossroads',
-              narrative:
-                'Flashes of staircases, guardian wards, and a caged tinkerer cascade before you. You commit the patterns to memory.',
-              effects: {
-                flags: { mapped_spire: true },
-                statusAdjust: { influence: 1 }
-              }
-            },
-            failure: {
-              id: 'outcome_seraphine_vision_burn',
-              nextSceneId: 'market_crossroads',
-              narrative:
-                'The astral resonance scorches your mind. Seraphine steadies you, but the experience leaves you rattled.',
-              effects: {
-                statusAdjust: { stress: 2 },
-                flags: { astral_burn: true }
-              }
-            }
-          }
-        },
-        {
-          id: 'seraphine_divination',
-          label: 'Request a warded charm to shield against corruption.',
-          skillCheck: {
-            ability: 'charisma',
-            skill: 'persuasion',
-            dc: 12,
-            success: {
-              id: 'outcome_seraphine_charm',
-              nextSceneId: 'market_crossroads',
-              narrative:
-                'Seraphine knots threads of starlight into a charm that pulses with protection.',
-              effects: {
-                addItems: ['Heartward Charm'],
-                flags: { corruption_resist: true }
-              }
-            },
-            failure: {
-              id: 'outcome_seraphine_tax',
-              nextSceneId: 'market_crossroads',
-              narrative:
-                'The ritual backfires, draining your stamina. Seraphine apologizes as the charm dissolves in sparks.',
-              effects: {
-                statusAdjust: { stress: 1, wounds: 1 }
-              }
-            }
-          }
-        },
-        {
-          id: 'seraphine_depart',
-          label: 'Thank Seraphine and head for the market crossroads.',
-          autoSuccess: {
-            id: 'outcome_seraphine_depart',
-            nextSceneId: 'market_crossroads',
-            narrative:
-              'Seraphine squeezes your arm. “I will watch the threads. Return with hope.”'
-          }
-        }
+      complications: [
+        'Civilians caught between barricades.',
+        'Cultist saboteurs targeting lifts.',
+        'Limited time before the spire sheds more debris.'
       ],
-      onEnter: {
-        notes: ['Seraphine’s allyship may unlock visions later in the spire.']
-      }
+      escalation:
+        'When the hero commits to the ascent, the plaza quakes as the Heart surges, forcing a dramatic exit toward the spire.'
     },
     {
-      id: 'tamsin_workshop',
-      title: 'Workshop of Whirring Wonders',
-      narrative:
-        'Tamsin kicks a crate aside, revealing half-finished gadgets. “The spire’s systems are ancient,” she says. “Let’s give you an edge.”',
-      locationId: 'tamsin_workshop',
-      options: [
-        {
-          id: 'tamsin_gadget',
-          label: 'Test a repulsor rig for vertical traversal.',
-          skillCheck: {
-            ability: 'dexterity',
-            skill: 'sleightOfHand',
-            dc: 12,
-            success: {
-              id: 'outcome_tamsin_repulsor',
-              nextSceneId: 'market_crossroads',
-              narrative:
-                'The rig hums as you anchor to the workshop rafters. You feel light, ready to scale the spire.',
-              effects: {
-                addItems: ['Repulsor Rig'],
-                flags: { vertical_advantage: true }
-              }
-            },
-            failure: {
-              id: 'outcome_tamsin_mishap',
-              nextSceneId: 'market_crossroads',
-              narrative:
-                'The rig sputters mid-lift, sending you tumbling into scrap metal. Tamsin winces and tosses you a bruise salve.',
-              effects: {
-                statusAdjust: { wounds: 1, stress: 1 }
-              }
-            }
-          }
-        },
-        {
-          id: 'tamsin_briefing',
-          label: 'Get a briefing on maintenance tunnels.',
-          autoSuccess: {
-            id: 'outcome_tamsin_briefed',
-            nextSceneId: 'market_crossroads',
-            narrative:
-              'Tamsin scribbles notes on a grease-stained parchment, outlining hidden vents and emergency shafts.',
-            effects: {
-              flags: { knows_tunnels: true }
-            }
-          }
-        },
-        {
-          id: 'tamsin_static',
-          label: 'Ask Tamsin to rig a stun charge in case of trouble.',
-          skillCheck: {
-            ability: 'intelligence',
-            skill: 'arcana',
-            dc: 11,
-            success: {
-              id: 'outcome_tamsin_stun',
-              nextSceneId: 'market_crossroads',
-              narrative:
-                'You calibrate the charge together, crafting a potent burst.',
-              effects: {
-                addItems: ['Static Charge'],
-                flags: { emergency_stun: true }
-              }
-            },
-            failure: {
-              id: 'outcome_tamsin_overload',
-              nextSceneId: 'market_crossroads',
-              narrative:
-                'The charge overloads, singing your fingertips. Tamsin fans away smoke with an apologetic shrug.',
-              effects: {
-                statusAdjust: { stress: 1 }
-              }
-            }
-          }
-        }
+      id: 'act2',
+      title: 'Spire Ascent',
+      situation:
+        'Inside the spire, flickering rituals, broken maintenance shafts, and arc-sentry patrols form a gauntlet toward the Containment Annex.',
+      objectives: [
+        'Navigate vertical lifts, maintenance tunnels, or astral currents.',
+        'Locate and free Nerrix Tal who understands the Heart’s systems.',
+        'Decide whether to strike bargains with Lirael’s lingering essence.'
       ],
-      onEnter: {
-        notes: ['Tamsin can improvise later if you kept her confident.']
-      }
-    },
-    {
-      id: 'throne_command',
-      title: 'Sentinel Briefing',
-      narrative:
-        'Captain Thorne issues terse orders while the guard rally civilians. “Use the badge wisely,” he says. “Sentinel lifts are keyed to it. Fail, and Emberfall fails with you.”',
-      locationId: 'sentinel_command',
-      options: [
-        {
-          id: 'throne_assign',
-          label: 'Accept a sentinel escort to the spire approach.',
-          autoSuccess: {
-            id: 'outcome_thorne_escort',
-            nextSceneId: 'market_crossroads',
-            narrative:
-              'Two sentinels flank you as you cut through barricades, clearing a direct route to the spire.',
-            effects: {
-              flags: { sentinel_route: true },
-              statusAdjust: { influence: 1 }
-            }
-          }
-        },
-        {
-          id: 'throne_warn',
-          label: 'Warn Thorne about astral backlash you sensed in the Heart.',
-          skillCheck: {
-            ability: 'wisdom',
-            skill: 'insight',
-            dc: 13,
-            success: {
-              id: 'outcome_thorne_warn_success',
-              nextSceneId: 'market_crossroads',
-              narrative:
-                'Thorne adjusts his strategy, promising to evacuate the terraces and keep channels open for your signal.',
-              effects: {
-                flags: { marek_support: true },
-                statusAdjust: { influence: 1 }
-              }
-            },
-            failure: {
-              id: 'outcome_thorne_warn_fail',
-              nextSceneId: 'market_crossroads',
-              narrative:
-                'He nods politely but disbelief lingers. You leave with urgency gnawing at you.',
-              effects: {
-                statusAdjust: { stress: 1 }
-              }
-            }
-          }
-        },
-        {
-          id: 'throne_depart',
-          label: 'Head for the market crossroads.',
-          autoSuccess: {
-            id: 'outcome_thorne_depart',
-            nextSceneId: 'market_crossroads',
-            narrative: 'You stride toward the spire as the guard rally behind you.'
-          }
-        }
-      ]
-    },
-    {
-      id: 'marek_clash',
-      title: 'Shadowed by Sentinels',
-      narrative:
-        'Two sentinels tail you through the crowd. Orders echo: “Do not let them near the spire until verified.” Time bleeds away.',
-      locationId: 'emberfall_market',
-      options: [
-        {
-          id: 'marek_slip',
-          label: 'Slip the tail using market stalls.',
-          skillCheck: {
-            ability: 'dexterity',
-            skill: 'stealth',
-            dc: 13,
-            success: {
-              id: 'outcome_marek_slip',
-              nextSceneId: 'market_crossroads',
-              narrative:
-                'You vanish amidst rushing refugees, shaking the sentinels and regaining momentum.',
-              effects: {
-                flags: { evaded_guards: true }
-              }
-            },
-            failure: {
-              id: 'outcome_marek_stress',
-              nextSceneId: 'market_crossroads',
-              narrative:
-                'A sentinel grazes your shoulder with a truncheon before you break free. Pain thrums as you bolt.',
-              effects: {
-                statusAdjust: { stress: 1, wounds: 1 }
-              }
-            }
-          }
-        },
-        {
-          id: 'marek_confront',
-          label: 'Confront the sentinels with raw determination.',
-          skillCheck: {
-            ability: 'charisma',
-            skill: 'intimidation',
-            dc: 12,
-            success: {
-              id: 'outcome_marek_intimidate',
-              nextSceneId: 'market_crossroads',
-              narrative:
-                'You plant your feet and declare authority. The sentinels, shaken by the spire’s tremors, back down.',
-              effects: {
-                statusAdjust: { influence: 1 },
-                flags: { marek_respects: true }
-              }
-            },
-            failure: {
-              id: 'outcome_marek_subdue',
-              nextSceneId: 'market_crossroads',
-              narrative:
-                'They attempt to detain you, but chaos in the square forces them to release you with a final warning.',
-              effects: {
-                statusAdjust: { stress: 2 }
-              }
-            }
-          }
-        },
-        {
-          id: 'marek_ruse',
-          label: 'Use a forged signal flare to divert them.',
-          requiresFlag: 'met_tamsin',
-          skillCheck: {
-            ability: 'intelligence',
-            skill: 'investigation',
-            dc: 11,
-            success: {
-              id: 'outcome_marek_ruse_success',
-              nextSceneId: 'market_crossroads',
-              narrative:
-                'Tamsin’s flare erupts in a nearby tower. The sentinels sprint away, leaving you a clear path.',
-              effects: {
-                flags: { tamsin_impressed: true }
-              }
-            },
-            failure: {
-              id: 'outcome_marek_ruse_fail',
-              nextSceneId: 'market_crossroads',
-              narrative:
-                'The flare sputters. The sentinels glare as you bolt, more stressed than before.',
-              effects: {
-                statusAdjust: { stress: 1 }
-              }
-            }
-          }
-        }
-      ]
-    },
-    {
-      id: 'market_crossroads',
-      title: 'Crossroads in Crisis',
-      narrative:
-        'Smoke swirls above the plaza as citizens dart between barricades. The spire looms overhead, its lower platforms shuddering in unstable arcs.',
-      locationId: 'emberfall_market',
-      options: [
-        {
-          id: 'crossroads_aid_civilians',
-          label: 'Aid trapped civilians to earn their trust.',
-          skillCheck: {
-            ability: 'strength',
-            skill: 'athletics',
-            dc: 12,
-            success: {
-              id: 'outcome_crossroads_aid_success',
-              nextSceneId: 'spire_approach',
-              narrative:
-                'You heft rubble aside, freeing a family. Grateful faces whisper blessings as you rush onward.',
-              effects: {
-                statusAdjust: { influence: 1 }
-              }
-            },
-            failure: {
-              id: 'outcome_crossroads_aid_fail',
-              nextSceneId: 'spire_approach',
-              narrative:
-                'The rubble shifts dangerously and you barely escape. Helping cost precious energy.',
-              effects: {
-                statusAdjust: { stress: 1 }
-              }
-            }
-          }
-        },
-        {
-          id: 'crossroads_interrogate_spirit',
-          label: 'Consult a tethered spirit lingering near the spire lift.',
-          requiresFlag: 'met_seraphine',
-          skillCheck: {
-            ability: 'wisdom',
-            skill: 'religion',
-            dc: 12,
-            success: {
-              id: 'outcome_crossroads_spirit_success',
-              nextSceneId: 'spire_approach',
-              narrative:
-                'The spirit whispers of a prisoner engineer, Nerrix, held below the Heart. Rescuing them could stabilize the core.',
-              effects: {
-                flags: { learned_nerrix: true }
-              }
-            },
-            failure: {
-              id: 'outcome_crossroads_spirit_fail',
-              nextSceneId: 'spire_approach',
-              narrative:
-                'The spirit lashes out with cold fury. You stagger, spine iced by spectral touch.',
-              effects: {
-                statusAdjust: { stress: 1, corruption: 1 }
-              }
-            }
-          }
-        },
-        {
-          id: 'crossroads_dash',
-          label: 'Dash straight for the spire approach before time slips.',
-          autoSuccess: {
-            id: 'outcome_crossroads_dash',
-            nextSceneId: 'spire_approach',
-            narrative:
-              'You weave through wreckage toward the spire’s skeletal lifts, heart pounding.'
-          }
-        }
-      ]
-    },
-    {
-      id: 'spire_approach',
-      title: 'Shattered Spire Approach',
-      narrative:
-        'The base of the floating spire groans as chunks of stone drift loose. Two routes remain: the ritual lift, flickering with unstable light, and a narrow maintenance shaft venting ozone.',
-      locationId: 'spire_base',
-      options: [
-        {
-          id: 'approach_ritual_lift',
-          label: 'Attempt to stabilize the ritual elevator.',
-          skillCheck: {
-            ability: 'intelligence',
-            skill: 'arcana',
-            dc: 14,
-            advantageIfFlag: 'met_seraphine',
-            success: {
-              id: 'outcome_lift_stabilized',
-              nextSceneId: 'etheric_lift',
-              narrative:
-                'You weave sigils into the lift’s pattern, calming its violent tremors. The platform hums, awaiting ascent.',
-              effects: {
-                flags: { lift_accessible: true }
-              }
-            },
-            failure: {
-              id: 'outcome_lift_backlash',
-              nextSceneId: 'maintenance_shaft',
-              narrative:
-                'Energy kicks back, forcing you to abandon the lift and crawl toward the maintenance shaft with ringing ears.',
-              effects: {
-                statusAdjust: { stress: 2 },
-                flags: { lift_failed: true }
-              }
-            }
-          }
-        },
-        {
-          id: 'approach_maintenance',
-          label: 'Climb the maintenance shaft Tamsin described.',
-          skillCheck: {
-            ability: 'dexterity',
-            skill: 'acrobatics',
-            dc: 13,
-            advantageIfFlag: 'vertical_advantage',
-            success: {
-              id: 'outcome_shaft_success',
-              nextSceneId: 'maintenance_shaft',
-              narrative:
-                'You scale the shaft with practiced ease, dodging sparking conduits toward the mid-spire junction.',
-              effects: {
-                flags: { stealth_route: true }
-              }
-            },
-            failure: {
-              id: 'outcome_shaft_fall',
-              nextSceneId: 'maintenance_shaft',
-              narrative:
-                'A rung snaps. You slam into a crossbeam before catching yourself, bruised but alive.',
-              effects: {
-                statusAdjust: { wounds: 1, stress: 1 }
-              }
-            }
-          }
-        },
-        {
-          id: 'approach_guard_route',
-          label: 'Show the sentinel badge and request escort.',
-          requiresFlag: 'marek_support',
-          autoSuccess: {
-            id: 'outcome_guard_route',
-            nextSceneId: 'etheric_lift',
-            narrative:
-              'Sentinels clear a path and key the ritual lift for you, offering a salute as you ascend.',
-            effects: {
-              flags: { lift_accessible: true, sentinel_route: true }
-            }
-          }
-        }
-      ]
-    },
-    {
-      id: 'etheric_lift',
-      title: 'Etheric Lift Ascent',
-      narrative:
-        'The lift carries you through a storm of vibrant shards. Astral currents lash against the warding sigils. Midway, the platform jolts to a halt beside an auxiliary junction.',
-      locationId: 'etheric_lift',
-      options: [
-        {
-          id: 'lift_override',
-          label: 'Force a restart through the control glyphs.',
-          skillCheck: {
-            ability: 'intelligence',
-            skill: 'arcana',
-            dc: 14,
-            success: {
-              id: 'outcome_lift_override',
-              nextSceneId: 'spire_midway',
-              narrative:
-                'You decipher the glyph sequence and the lift glides onward, steady once more.',
-              effects: {
-                statusAdjust: { influence: 1 }
-              }
-            },
-            failure: {
-              id: 'outcome_lift_misfire',
-              nextSceneId: 'spire_midway',
-              narrative:
-                'The glyphs backlash, singeing your focus. The lift lurches upward erratically.',
-              effects: {
-                statusAdjust: { stress: 2 }
-              }
-            }
-          }
-        },
-        {
-          id: 'lift_investigate',
-          label: 'Investigate the junction for prisoners.',
-          requiresFlag: 'learned_nerrix',
-          autoSuccess: {
-            id: 'outcome_lift_investigate',
-            nextSceneId: 'nerrix_cell',
-            narrative:
-              'You pry open the junction hatch, revealing a dim holding cell pulsing with containment fields.'
-          }
-        },
-        {
-          id: 'lift_wait',
-          label: 'Wait patiently for the lift to resume.',
-          autoSuccess: {
-            id: 'outcome_lift_wait',
-            nextSceneId: 'spire_midway',
-            narrative:
-              'Moments stretch before the lift shudders back to life, carrying you to the mid-spire plaza.'
-          }
-        }
+      complications: [
+        'Electrical storms, unstable platforms, and arc sentries.',
+        'Marek’s forces taking heavy casualties below, pressuring the hero.',
+        'Tempting shortcuts that risk corruption.'
       ],
-      fallbackSceneId: 'spire_midway'
+      escalation:
+        'As the hero nears the Heart, astral pressure fractures rooms and opens glimpses into Lirael’s fractured memory.'
     },
     {
-      id: 'maintenance_shaft',
-      title: 'Electrified Maintenance Shaft',
-      narrative:
-        'The shaft slants upward with live conduits arcing across narrow platforms. Distant clangs hint at automaton sentries patrolling nearby.',
-      locationId: 'maintenance_shaft',
-      options: [
-        {
-          id: 'shaft_silent',
-          label: 'Move silently between the conduits.',
-          skillCheck: {
-            ability: 'dexterity',
-            skill: 'stealth',
-            dc: 13,
-            success: {
-              id: 'outcome_shaft_silent',
-              nextSceneId: 'spire_midway',
-              narrative:
-                'You slip past sparking conduits and bypass the sentry patrols.',
-              effects: {
-                flags: { stealth_route: true }
-              }
-            },
-            failure: {
-              id: 'outcome_shaft_alert',
-              nextSceneId: 'sentry_skirmish',
-              narrative:
-                'A conduit flares, triggering dormant sentries that lurch to life.',
-              effects: {
-                statusAdjust: { stress: 1 }
-              }
-            }
-          }
-        },
-        {
-          id: 'shaft_force',
-          label: 'Smash through an obstructing maintenance door.',
-          skillCheck: {
-            ability: 'strength',
-            skill: 'athletics',
-            dc: 13,
-            success: {
-              id: 'outcome_shaft_force',
-              nextSceneId: 'spire_midway',
-              narrative:
-                'You batter the door aside and storm through before the sentries recalibrate.',
-              effects: {
-                statusAdjust: { influence: 1 }
-              }
-            },
-            failure: {
-              id: 'outcome_shaft_force_fail',
-              nextSceneId: 'sentry_skirmish',
-              narrative:
-                'The door holds. Sentinels converge as you brace for combat.',
-              effects: {
-                statusAdjust: { stress: 2 }
-              }
-            }
-          }
-        },
-        {
-          id: 'shaft_rappel',
-          label: 'Use gear to rappel around dangerous sections.',
-          requiresFlag: 'vertical_advantage',
-          autoSuccess: {
-            id: 'outcome_shaft_rappel',
-            nextSceneId: 'spire_midway',
-            narrative:
-              'Your rig carries you safely over the worst arcs, depositing you near the mid-spire plaza.'
-          }
-        }
+      id: 'act3',
+      title: 'Heart of Embers',
+      situation:
+        'At the core, the Heart pulses dangerously. Lirael, half-bound guardian, tests the hero’s resolve while cultist remnants try to seize control.',
+      objectives: [
+        'Stabilise or cleanse the Heart by aligning harmonic conduits.',
+        'Decide the fate of Lirael and Emberfall’s future power source.',
+        'Deliver a final choice that ripples through the city (cleanse, bargain, shatter, or redirect).'
       ],
-      fallbackSceneId: 'sentry_skirmish'
-    },
-    {
-      id: 'sentry_skirmish',
-      title: 'Arc-Sentry Skirmish',
-      narrative:
-        'Arc-sentries whirl toward you, blades humming with energy. Sparks fly as they advance in synchronized formation.',
-      locationId: 'sentry_gauntlet',
-      options: [
-        {
-          id: 'sentry_overload',
-          label: 'Overload their cores with a dizzying attack.',
-          requiresFlag: 'emergency_stun',
-          autoSuccess: {
-            id: 'outcome_sentry_overload',
-            nextSceneId: 'spire_midway',
-            narrative:
-              'You trigger Tamsin’s charge, toppling the sentries in a burst of static.',
-            effects: {
-              flags: { emergency_stun: false }
-            }
-          }
-        },
-        {
-          id: 'sentry_duel',
-          label: 'Fight through the sentries with brute force.',
-          skillCheck: {
-            ability: 'strength',
-            skill: 'athletics',
-            dc: 14,
-            success: {
-              id: 'outcome_sentry_duel_success',
-              nextSceneId: 'spire_midway',
-              narrative:
-                'You cleave through the sentries, shattering their cores with decisive blows.',
-              effects: {
-                statusAdjust: { stress: 1 }
-              }
-            },
-            failure: {
-              id: 'outcome_sentry_duel_fail',
-              nextSceneId: 'spire_midway',
-              narrative:
-                'The sentries slice into your defenses before you disable them. You stagger onward wounded.',
-              effects: {
-                statusAdjust: { wounds: 2, stress: 1 }
-              }
-            }
-          }
-        },
-        {
-          id: 'sentry_hack',
-          label: 'Attempt to hack their command protocols mid-combat.',
-          skillCheck: {
-            ability: 'intelligence',
-            skill: 'arcana',
-            dc: 15,
-            success: {
-              id: 'outcome_sentry_hack',
-              nextSceneId: 'spire_midway',
-              narrative:
-                'Runes flare as you seize command of the sentries, ordering them to stand down.',
-              effects: {
-                flags: { commandeered_sentries: true },
-                statusAdjust: { influence: 1 }
-              }
-            },
-            failure: {
-              id: 'outcome_sentry_hack_fail',
-              nextSceneId: 'spire_midway',
-              narrative:
-                'The hack slips. Feedback scorches your channels as you disable them the hard way.',
-              effects: {
-                statusAdjust: { stress: 2 }
-              }
-            }
-          }
-        }
+      complications: [
+        'Corruption bleeding into the hero’s veins.',
+        'Nerrix’s failsafes misfiring.',
+        'Time pressure as the spire begins to fall.'
       ],
-      onEnter: {
-        statusAdjust: { stress: 1 }
-      }
-    },
+      escalation:
+        'Every action shakes Emberfall. Describe citizens reacting in real time and allies lending distant aid.'
+    }
+  ],
+  characters: [
     {
-      id: 'nerrix_cell',
-      title: 'Nerrix’s Containment Cell',
-      narrative:
-        'Nerrix, a soot-streaked tinkerer, hangs suspended in amber light. “Get me out and I’ll stabilize the Heart,” they plead.',
-      locationId: 'nerrix_hold',
-      options: [
-        {
-          id: 'nerrix_free',
-          label: 'Disable the containment rune lattice.',
-          skillCheck: {
-            ability: 'intelligence',
-            skill: 'arcana',
-            dc: 13,
-            success: {
-              id: 'outcome_nerrix_free_success',
-              nextSceneId: 'spire_midway',
-              narrative:
-                'The lattice collapses. Nerrix drops to their knees, grateful and ready to aid you.',
-              effects: {
-                allies: { nerrix: 'ally' },
-                flags: { nerrix_rescued: true }
-              }
-            },
-            failure: {
-              id: 'outcome_nerrix_free_fail',
-              nextSceneId: 'spire_midway',
-              narrative:
-                'Energy flares, forcing you to abort before you fry both of you. Nerrix remains trapped, hope dwindling.',
-              effects: {
-                statusAdjust: { stress: 1 },
-                flags: { nerrix_failed: true }
-              }
-            }
-          }
-        },
-        {
-          id: 'nerrix_bargain',
-          label: 'Bargain with Nerrix for intel in exchange for later rescue.',
-          skillCheck: {
-            ability: 'charisma',
-            skill: 'persuasion',
-            dc: 12,
-            success: {
-              id: 'outcome_nerrix_bargain_success',
-              nextSceneId: 'spire_midway',
-              narrative:
-                'Nerrix shares a bypass phrase for the Heart’s guardian, trusting you’ll return.',
-              effects: {
-                flags: { heart_bypass_phrase: true }
-              }
-            },
-            failure: {
-              id: 'outcome_nerrix_bargain_fail',
-              nextSceneId: 'spire_midway',
-              narrative:
-                'Nerrix curses you, vowing to sabotage your efforts if you abandon them.',
-              effects: {
-                allies: { nerrix: 'rival' },
-                statusAdjust: { corruption: 1 }
-              }
-            }
-          }
-        },
-        {
-          id: 'nerrix_leave',
-          label: 'Apologize and continue upward before the lift fails.',
-          autoSuccess: {
-            id: 'outcome_nerrix_leave',
-            nextSceneId: 'spire_midway',
-            narrative:
-              'You steel yourself and move on, the cell door closing with a regretful hiss.'
-          }
-        }
-      ]
-    },
-    {
-      id: 'spire_midway',
-      title: 'Mid-Spire Plaza',
-      narrative:
-        'You emerge on a broken plaza hovering near the Heart’s chamber. Energy arcs to shattered archways as the floating spire groans.',
-      locationId: 'mid_spire_plaza',
-      options: [
-        {
-          id: 'midway_assess',
-          label: 'Assess the plaza for hazards and opportunities.',
-          skillCheck: {
-            ability: 'wisdom',
-            skill: 'perception',
-            dc: 12,
-            success: {
-              id: 'outcome_midway_assess_success',
-              nextSceneId: 'heart_antechamber',
-              narrative:
-                'You spot a stable path and a dormant ward, buying time before the final chamber.',
-              effects: {
-                flags: { safe_path: true }
-              }
-            },
-            failure: {
-              id: 'outcome_midway_assess_fail',
-              nextSceneId: 'heart_antechamber',
-              narrative:
-                'A hidden glyph erupts, staggering you as you rush into the antechamber regardless.',
-              effects: {
-                statusAdjust: { stress: 1 }
-              }
-            }
-          }
-        },
-        {
-          id: 'midway_rally_allies',
-          label: 'Signal allies for remote aid.',
-          requiresFlag: 'marek_support',
-          autoSuccess: {
-            id: 'outcome_midway_rally',
-            nextSceneId: 'heart_antechamber',
-            narrative:
-              'Thorne’s sentinels lock onto your beacon, promising to hold the plaza and cover your retreat.',
-            effects: {
-              flags: { rally_support: true }
-            }
-          }
-        },
-        {
-          id: 'midway_focus',
-          label: 'Meditate briefly to center yourself.',
-          autoSuccess: {
-            id: 'outcome_midway_focus',
-            nextSceneId: 'heart_antechamber',
-            narrative:
-              'You inhale slow, calming breaths. Despite the chaos, clarity settles over you.',
-            effects: {
-              statusAdjust: { stress: -1 }
-            }
-          }
-        }
+      id: 'seraphine',
+      name: 'Seraphine Voss',
+      role: 'Lantern seer who reads future threads from ember lanterns.',
+      motivation: 'Prevent the Heart’s corruption from consuming the city.',
+      voice:
+        'Soft, prophetic, often referencing sparks and threads while nudging the hero toward compassionate choices.',
+      secrets: [
+        'Knows Lirael retains some agency.',
+        'Foresees a version where the hero becomes the next warden.'
       ],
-      onEnter: {
-        notes: ['Beyond lies the Heart. Prepare for the guardian.']
-      }
+      resources: ['Visions of imminent threats', 'Ritual focus flames']
     },
     {
-      id: 'heart_antechamber',
-      title: 'Whispers of the Heart',
-      narrative:
-        'The antechamber resonates with layered voices. Shadows coil around a broken statue of Lirael, the Heart’s astral warden. The final door awaits.',
-      locationId: 'heart_antechamber',
-      options: [
-        {
-          id: 'antechamber_invocation',
-          label: 'Invoke protective wards before entering.',
-          requiresFlag: 'corruption_resist',
-          autoSuccess: {
-            id: 'outcome_antechamber_ward',
-            nextSceneId: 'heart_chamber',
-            narrative:
-              'The charm glows, wrapping you in a sheath of light as you step toward the Heart.'
-          }
-        },
-        {
-          id: 'antechamber_ready_weapon',
-          label: 'Ready your weapon and kick open the door.',
-          autoSuccess: {
-            id: 'outcome_antechamber_weapon',
-            nextSceneId: 'heart_chamber',
-            narrative:
-              'You brace yourself, weapon forward, and stride into the Heart’s chamber prepared for battle.'
-          }
-        },
-        {
-          id: 'antechamber_listen',
-          label: 'Listen to the whispers to glean Lirael’s state.',
-          skillCheck: {
-            ability: 'wisdom',
-            skill: 'insight',
-            dc: 14,
-            success: {
-              id: 'outcome_antechamber_listen_success',
-              nextSceneId: 'heart_chamber',
-              narrative:
-                'You perceive sorrow beneath the corruption. Lirael longs for release, not destruction.',
-              effects: {
-                flags: { empathized_lirael: true }
-              }
-            },
-            failure: {
-              id: 'outcome_antechamber_listen_fail',
-              nextSceneId: 'heart_chamber',
-              narrative:
-                'The whispers claw at your mind. You stumble through the door shaken.',
-              effects: {
-                statusAdjust: { corruption: 1, stress: 1 }
-              }
-            }
-          }
-        }
+      id: 'tamsin',
+      name: 'Tamsin Quickwick',
+      role: 'Goblin artificer managing improvised gadgets.',
+      motivation: 'Keep her inventions (and Emberfall) from exploding.',
+      voice: 'Chaotic, witty, full of technical jargon and improvised metaphors.',
+      secrets: ['Built a forbidden harmonic lance hidden in the maintenance shafts.'],
+      resources: ['Grappling rigs', 'Arc dampeners', 'Explosive charges']
+    },
+    {
+      id: 'marek',
+      name: 'Captain Marek Thorne',
+      role: 'Sentinel commander coordinating evacuations.',
+      motivation: 'Save as many citizens as possible while maintaining order.',
+      voice: 'Blunt, duty-bound, tempered with reluctant respect when earned.',
+      secrets: ['Fears Emberfall will scapegoat him if the plan fails.'],
+      resources: ['Sentinel squads', 'Barricade schematics']
+    },
+    {
+      id: 'nerrix',
+      name: 'Nerrix Tal',
+      role: 'Tinkerer trapped in the spire’s Containment Annex.',
+      motivation: 'Escape and ensure the Heart does not fall into cult control.',
+      voice: 'Nervy, brilliant, peppered with technomantic slang.',
+      secrets: ['Knows the shutdown sequence requires a personal sacrifice.'],
+      resources: ['Harmonic keycodes', 'Containment overrides']
+    },
+    {
+      id: 'lirael',
+      name: 'Lirael the Warden',
+      role: 'Astral guardian bound to the Heart.',
+      motivation: 'Guard Emberfall yet long for release from duty.',
+      voice: 'Echoing, solemn, poetic, challenging the hero’s convictions.',
+      secrets: [
+        'Can merge with a mortal champion.',
+        'Believes the Heart might seed other cities if controlled.'
+      ],
+      resources: ['Astral barriers', 'Memory echoes shared with the hero']
+    }
+  ],
+  lore: [
+    {
+      id: 'heart',
+      title: 'Heart of Embers',
+      details: [
+        'An astral core lifted above Emberfall to power wards and lifts.',
+        'Stabilised by hymns and harmonic circuits maintained by Nerrix’s guild.',
+        'Now destabilised after cult interference; needs resynchronisation or a clean severance.'
       ]
     },
     {
-      id: 'heart_chamber',
-      title: 'The Heart of Embers',
-      narrative:
-        'Within the fractured chamber, the Heart pulses erratically. Lirael, once radiant, now stands corrupted by astral fire. “Leave,” she intones, voice layered with thunder. “The Heart will consume all.”',
-      locationId: 'heart_chamber',
-      options: [
-        {
-          id: 'heart_cleanse',
-          label: 'Attempt to cleanse the Heart and restore Lirael.',
-          skillCheck: {
-            ability: 'charisma',
-            skill: 'persuasion',
-            dc: 15,
-            advantageIfFlag: 'empathized_lirael',
-            success: {
-              id: 'outcome_heart_cleanse_success',
-              nextSceneId: 'escape_gauntlet',
-              narrative:
-                'Light surges through you. Lirael’s corruption melts away and she grants you the Heart, stabilized yet fragile.',
-              effects: {
-                flags: { heart_cleansed: true },
-                allies: { lirael: 'ally' },
-                statusAdjust: { influence: 2 }
-              }
-            },
-            failure: {
-              id: 'outcome_heart_cleanse_fail',
-              nextSceneId: 'escape_gauntlet',
-              narrative:
-                'The Heart resists, lashing you with scorching light. Lirael howls and the chamber quakes.',
-              effects: {
-                statusAdjust: { stress: 2, corruption: 1 }
-              }
-            }
-          }
-        },
-        {
-          id: 'heart_bargain',
-          label: 'Bargain with the Heart, offering to bear its burden.',
-          skillCheck: {
-            ability: 'wisdom',
-            skill: 'religion',
-            dc: 15,
-            success: {
-              id: 'outcome_heart_bargain_success',
-              nextSceneId: 'escape_gauntlet',
-              narrative:
-                'You entwine your essence with the Heart, taking on its radiance. Lirael bows, freed of the curse.',
-              effects: {
-                flags: { heart_bargained: true },
-                statusAdjust: { corruption: 1 }
-              }
-            },
-            failure: {
-              id: 'outcome_heart_bargain_fail',
-              nextSceneId: 'escape_gauntlet',
-              narrative:
-                'The Heart recoils, destabilizing further. Lirael readies to strike as cracks splinter the chamber.',
-              effects: {
-                statusAdjust: { stress: 2 },
-                flags: { lirael_enraged: true }
-              }
-            }
-          }
-        },
-        {
-          id: 'heart_shatter',
-          label: 'Shatter the Heart to prevent catastrophic corruption.',
-          skillCheck: {
-            ability: 'strength',
-            skill: 'athletics',
-            dc: 16,
-            success: {
-              id: 'outcome_heart_shatter_success',
-              nextSceneId: 'escape_gauntlet',
-              narrative:
-                'You smash the Heart, dispersing its energy. Lirael collapses, and the spire begins to crumble outright.',
-              effects: {
-                flags: { heart_shattered: true },
-                statusAdjust: { stress: 1 }
-              }
-            },
-            failure: {
-              id: 'outcome_heart_shatter_fail',
-              nextSceneId: 'escape_gauntlet',
-              narrative:
-                'The Heart resists your strike, detonating in a wave that sears your flesh.',
-              effects: {
-                statusAdjust: { stress: 2, wounds: 2 },
-                flags: { heart_instable: true }
-              }
-            }
-          }
-        }
+      id: 'emberfall',
+      title: 'City of Emberfall',
+      details: [
+        'Built into cliff terraces with luminous canals channeling Heart energy.',
+        'Ashfen Plaza acts as the social and strategic heart of evac efforts.',
+        'Citizens rely on Sentinels and the hero’s success to survive.'
       ]
     },
     {
-      id: 'escape_gauntlet',
-      title: 'Cascade Escape',
-      narrative:
-        'With the Heart decided, the spire destabilizes. Platforms collapse as torrents of energy chase you toward the exit.',
-      locationId: 'spire_cascade',
-      options: [
-        {
-          id: 'escape_dash',
-          label: 'Sprint through falling debris.',
-          skillCheck: {
-            ability: 'dexterity',
-            skill: 'acrobatics',
-            dc: 14,
-            advantageIfFlag: 'stealth_route',
-            success: {
-              id: 'outcome_escape_dash_success',
-              nextSceneId: 'epilogue_resolution',
-              narrative:
-                'You vault collapsing platforms and burst onto a stable ledge overlooking Emberfall.',
-              effects: {
-                statusAdjust: { stress: 1 }
-              }
-            },
-            failure: {
-              id: 'outcome_escape_dash_fail',
-              nextSceneId: 'epilogue_resolution',
-              narrative:
-                'Debris slams into you mid-leap. You limp onward, battered but alive.',
-              effects: {
-                statusAdjust: { wounds: 2, stress: 1 }
-              }
-            }
-          }
-        },
-        {
-          id: 'escape_guarded',
-          label: 'Rely on allies to clear a path.',
-          requiresFlag: 'rally_support',
-          autoSuccess: {
-            id: 'outcome_escape_allies',
-            nextSceneId: 'epilogue_resolution',
-            narrative:
-              'Sentinels and citizens in the plaza catch you, cushioning the landing as the spire groans overhead.'
-          }
-        },
-        {
-          id: 'escape_lirael',
-          label: 'Call upon Lirael’s aid.',
-          requiresFlag: 'heart_cleansed',
-          autoSuccess: {
-            id: 'outcome_escape_lirael',
-            nextSceneId: 'epilogue_resolution',
-            narrative:
-              'Lirael opens a shimmering gate, guiding you safely to the ground as the Heart radiates steady light.'
-          }
-        }
-      ]
-    },
-    {
-      id: 'epilogue_resolution',
-      title: 'Epilogue: Emberfall’s Fate',
-      narrative:
-        'You stand amid the surviving terraces as dawn breaks. Emberfall watches, hopeful or fearful, to learn what you achieved within the spire.',
-      locationId: 'emberfall_terraces',
-      options: [
-        {
-          id: 'epilogue_reflect',
-          label: 'Reflect on the journey and accept the outcome.',
-          autoSuccess: {
-            id: 'outcome_epilogue_reflect',
-            nextSceneId: null,
-            narrative:
-              'Your choices echo through Emberfall. The city will remember the night the Heart nearly fell—and the hero who answered.'
-          }
-        }
+      id: 'cult',
+      title: 'Ember Reclamation Cult',
+      details: [
+        'Believes the Heart should collapse to purge Emberfall’s elites.',
+        'Sows chaos in the plaza and inside the spire.',
+        'Some cultists try to bargain with Lirael for power.'
       ]
     }
   ]

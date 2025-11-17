@@ -106,103 +106,86 @@ export interface HeroState {
   allies: Record<string, 'ally' | 'rival' | 'neutral'>;
 }
 
-export interface SceneEffect {
-  addItems?: string[];
-  removeItems?: string[];
-  resources?: Partial<HeroResources>;
-  flags?: Record<string, boolean>;
-  allies?: Record<string, 'ally' | 'rival' | 'neutral'>;
-  statusAdjust?: Record<string, number>;
-  notes?: string[];
-}
-
-export interface SceneOutcome {
-  id: string;
-  nextSceneId: string | null;
-  narrative: string;
-  effects?: SceneEffect;
-}
-
-export interface SkillCheckDefinition {
-  ability: Ability;
-  skill?: Skill;
-  dc: number;
-  advantageIfFlag?: string;
-  disadvantageIfFlag?: string;
-  success: SceneOutcome;
-  failure: SceneOutcome;
-}
-
-export interface SceneChoice {
-  id: string;
-  label: string;
-  description?: string;
-  requiresFlag?: string;
-  hideIfFlag?: string;
-  autoSuccess?: SceneOutcome;
-  skillCheck?: SkillCheckDefinition;
-}
-
-export interface SceneNode {
+export interface CampaignAct {
   id: string;
   title: string;
-  narrative: string;
-  options: SceneChoice[];
-  once?: boolean;
-  tags?: string[];
-  locationId?: string;
-  onEnter?: SceneEffect;
-  fallbackSceneId?: string | null;
+  situation: string;
+  objectives: string[];
+  complications?: string[];
+  escalation?: string;
 }
 
-export interface WorldMapLocation {
+export interface CampaignCharacter {
   id: string;
   name: string;
-  summary: string;
-  position: {
-    x: number;
-    y: number;
-  };
-  sceneIds: string[];
-  connections?: string[];
-  tier?: 'city' | 'approach' | 'spire' | 'heart';
+  role: string;
+  motivation: string;
+  voice: string;
+  secrets?: string[];
+  resources?: string[];
 }
 
-export interface WorldMapDefinition {
-  width: number;
-  height: number;
-  background?: string;
-  description?: string;
-  locations: WorldMapLocation[];
+export interface CampaignLoreEntry {
+  id: string;
+  title: string;
+  details: string[];
 }
 
 export interface Campaign {
   id: string;
   title: string;
   synopsis: string;
-  introSceneId: string;
-  scenes: SceneNode[];
+  tone: string;
   guidance?: string[];
-  map?: WorldMapDefinition;
+  themes?: string[];
+  acts: CampaignAct[];
+  characters: CampaignCharacter[];
+  lore: CampaignLoreEntry[];
+}
+
+export interface StoryBeatDelta {
+  statusAdjust?: Record<string, number>;
+  flags?: Record<string, boolean>;
+  allies?: Record<string, 'ally' | 'rival' | 'neutral'>;
+  notes?: string[];
+  isEnding?: boolean;
+}
+
+export interface StoryBeatReply {
+  npcId: string;
+  text: string;
+}
+
+export interface StoryBeat {
+  id: string;
+  playerAction: string;
+  narrative: string;
+  npcReplies: StoryBeatReply[];
+  tags?: string[];
+  delta?: StoryBeatDelta;
+  createdAt: number;
+}
+
+export interface StoryAdvanceRequest {
+  action: string;
+  hero: HeroState;
+  beats: StoryBeat[];
+}
+
+export interface StoryAdvanceResponse {
+  beat: StoryBeat;
 }
 
 export interface LogEntry {
   id: string;
-  type: 'narration' | 'choice' | 'roll' | 'effect';
+  type: 'narration' | 'action' | 'system' | 'effect';
   label: string;
   detail?: string;
   createdAt: number;
 }
 
-export interface ConversationTurn {
-  speaker: 'player' | 'npc';
-  text: string;
-}
-
 export interface GameStateSnapshot {
   hero: HeroState | null;
-  currentSceneId: string | null;
+  storyBeats: StoryBeat[];
   log: LogEntry[];
-  visitedScenes: Record<string, number>;
-  conversation: Record<string, ConversationTurn[]>;
 }

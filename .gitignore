@@ -11,3 +11,4 @@ dnd-general
 client/.env.local
 server/firebase-service-account.local.json
 *.local.json
+.vscode

@@ -14,12 +14,12 @@ permissions:
   id-token: write
 
 env:
-  PROJECT_ID: newsite-4cb22
-  GAR_LOCATION: europe-west2
-  REPOSITORY: github-docker-repo
-  IMAGE: dnd-web
-  CLOUD_RUN_SERVICE: dnd
-  CLOUD_RUN_REGION: europe-west2
+  PROJECT_ID: ${{ vars.GCP_PROJECT_ID || 'newsite-4cb22' }}
+  GAR_LOCATION: ${{ vars.GAR_LOCATION || 'europe-west2' }}
+  REPOSITORY: ${{ vars.GAR_REPOSITORY || 'github-docker-repo' }}
+  IMAGE: ${{ vars.GAR_IMAGE || 'dnd-web' }}
+  CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE || 'dnd' }}
+  CLOUD_RUN_REGION: ${{ vars.CLOUD_RUN_REGION || 'europe-west2' }}
   WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
   SERVICE_ACCOUNT_EMAIL: ${{ vars.SERVICE_ACCOUNT_EMAIL }}
 
@@ -96,6 +96,11 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           FIREBASE_PROJECT_ID_SECRET: ${{ secrets.FIREBASE_PROJECT_ID }}
+          GENAI_PROJECT_ID: ${{ vars.GENAI_PROJECT_ID || vars.GCP_PROJECT_ID }}
+          GENAI_LOCATION: ${{ vars.GENAI_LOCATION || 'europe-west2' }}
+          GENAI_MODEL: ${{ vars.GENAI_MODEL || 'gemini-2.0-flash-lite-001' }}
+          GENAI_RATE_LIMIT_WINDOW_MS: ${{ vars.GENAI_RATE_LIMIT_WINDOW_MS || '60000' }}
+          GENAI_RATE_LIMIT_MAX_CALLS: ${{ vars.GENAI_RATE_LIMIT_MAX_CALLS || '40' }}
         run: |
           FIREBASE_SERVICE_ACCOUNT_B64="$(printf '%s' "${FIREBASE_SERVICE_ACCOUNT}" | base64 -w0)"
 
@@ -108,7 +113,7 @@ jobs:
             --scaling=auto \
             --network=default \
             --subnet=default \
-            --set-env-vars "FIREBASE_SERVICE_ACCOUNT=${FIREBASE_SERVICE_ACCOUNT_B64},FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID_SECRET}" \
+            --set-env-vars "FIREBASE_SERVICE_ACCOUNT=${FIREBASE_SERVICE_ACCOUNT_B64},FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID_SECRET},GENAI_PROJECT_ID=${GENAI_PROJECT_ID},GENAI_LOCATION=${GENAI_LOCATION},GENAI_MODEL=${GENAI_MODEL},GENAI_RATE_LIMIT_WINDOW_MS=${GENAI_RATE_LIMIT_WINDOW_MS},GENAI_RATE_LIMIT_MAX_CALLS=${GENAI_RATE_LIMIT_MAX_CALLS}" \
             --quiet
 
           gcloud run services add-iam-policy-binding "${CLOUD_RUN_SERVICE}" \

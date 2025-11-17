@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { GameProvider, useGame } from '@/context/GameContext';
 import CharacterCreator from '@/components/CharacterCreator';
-import SceneView from '@/components/SceneView';
 import Sidebar from '@/components/Sidebar';
 import LogPanel from '@/components/LogPanel';
 import Epilogue from '@/components/Epilogue';
-import WorldMap from '@/components/WorldMap';
-import ConversationPanel from '@/components/ConversationPanel';
-import DiceTray from '@/components/DiceTray';
+import StoryCanvas from '@/components/StoryCanvas';
+import CampaignGuide from '@/components/CampaignGuide';
 import AuthPanel from '@/components/AuthPanel';
 import { useAuth } from '@/context/AuthContext';
 import type { Campaign } from '@/types';
@@ -27,7 +25,7 @@ const GameShell = ({
   onSignOut?: () => void;
   authNotice?: string | null;
 }) => {
-  const { campaign, hero, currentScene, isGameComplete } = useGame();
+  const { campaign, hero, isGameComplete } = useGame();
 
   const race = hero ? RACE_DEFINITIONS.find((entry) => entry.id === hero.raceId) : null;
   const klass = hero
@@ -44,7 +42,6 @@ const GameShell = ({
     body = (
       <>
         <CharacterCreator />
-        <WorldMap />
         {isFetching && <div className="loading-indicator">Syncing campaign data…</div>}
       </>
     );
@@ -68,19 +65,11 @@ const GameShell = ({
 
         <main className="game-layout">
           <section className="primary-panel">
-            {currentScene ? (
-              <SceneView scene={currentScene} />
-            ) : (
-              <div className="scene-container">
-                <p>No scene loaded.</p>
-              </div>
-            )}
+            <StoryCanvas />
           </section>
           <section className="secondary-panel">
-            <DiceTray />
-            <WorldMap variant="sidebar" />
+            <CampaignGuide />
             <Sidebar />
-            <ConversationPanel />
             <LogPanel />
           </section>
         </main>
