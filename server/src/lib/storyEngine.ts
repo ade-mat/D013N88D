@@ -234,8 +234,9 @@ const fallbackNarrative = (
   campaign: Campaign,
   beats: StoryBeat[]
 ): StoryBeat => {
+  const lastBeat = beats.length > 0 ? beats[beats.length - 1] : null;
   const recentAct =
-    beats.at(-1)?.tags?.find((tag) => campaign.acts.some((act) => act.id === tag)) ??
+    lastBeat?.tags?.find((tag) => campaign.acts.some((act) => act.id === tag)) ??
     campaign.acts[beats.length >= 4 ? 2 : beats.length >= 2 ? 1 : 0]?.id ??
     'act1';
   const act =

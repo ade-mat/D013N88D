@@ -268,8 +268,9 @@ const buildOfflineBeat = (
   campaign: Campaign,
   beats: StoryBeat[]
 ): StoryBeat => {
+  const lastBeat = beats.length > 0 ? beats[beats.length - 1] : null;
   const fallbackAct =
-    beats.at(-1)?.tags?.[0] ??
+    lastBeat?.tags?.[0] ??
     campaign.acts[Math.min(beats.length, campaign.acts.length - 1)]?.id ??
     'act1';
   return {
