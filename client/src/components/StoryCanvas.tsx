@@ -45,7 +45,7 @@ const StoryCanvas = () => {
 
       <div className="story-canvas__timeline">
         {storyBeats.length === 0 ? (
-          <article className="story-beat muted">
+          <article className="story-beat story-beat--empty">
             <p>
               {hero
                 ? 'Describe your opening move to begin the ascent.'
@@ -55,23 +55,26 @@ const StoryCanvas = () => {
         ) : (
           storyBeats.map((beat) => (
             <article key={beat.id} className="story-beat">
-              <div className="story-beat__action">
-                <span>You</span>
+              <div className="story-panel story-panel--player">
+                <header>Hero</header>
                 <p>{beat.playerAction}</p>
               </div>
-              <div className="story-beat__narrative">
-                <span>Emberfall</span>
+              <div className="story-panel story-panel--narrator">
+                <header>Emberfall</header>
                 <p>{beat.narrative}</p>
-                {beat.npcReplies.length > 0 && (
-                  <ul>
-                    {beat.npcReplies.map((reply, index) => (
-                      <li key={`${reply.npcId}-${index}`}>
-                        <strong>{reply.npcId}</strong>: {reply.text}
-                      </li>
-                    ))}
-                  </ul>
-                )}
               </div>
+              {beat.npcReplies.map((reply, index) => {
+                const label =
+                  reply.npcId === 'narrator'
+                    ? 'Emberfall'
+                    : reply.npcId.replace(/_/g, ' ');
+                return (
+                  <div key={`${reply.npcId}-${index}`} className="story-panel story-panel--npc">
+                    <header>{label}</header>
+                    <p>{reply.text}</p>
+                  </div>
+                );
+              })}
             </article>
           ))
         )}
@@ -81,7 +84,7 @@ const StoryCanvas = () => {
 
       <div className="story-canvas__input">
         <textarea
-          rows={4}
+          rows={5}
           disabled={!hero}
           placeholder={
             hero
@@ -93,7 +96,7 @@ const StoryCanvas = () => {
         />
         <button
           type="button"
-          className="primary-button"
+          className="primary-button story-canvas__submit"
           onClick={() => {
             void handleSubmit();
           }}
