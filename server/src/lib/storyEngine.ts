@@ -268,12 +268,14 @@ export const generateStoryBeat = async (
   }
 
   try {
-    const result = await model.generateContent([
-      {
-        role: 'user',
-        parts: [{ text: prompt }]
-      }
-    ]);
+    const result = await model.generateContent({
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: prompt }]
+        }
+      ]
+    });
     const text = extractTextFromResponse(result);
     const jsonPayload = parseJson(text);
     if (!jsonPayload) {
