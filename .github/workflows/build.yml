@@ -58,6 +58,15 @@ jobs:
         run: |
           gcloud config set project "${PROJECT_ID}"
 
+      - name: Ensure Artifact Registry repository exists
+        run: |
+          gcloud artifacts repositories describe "${REPOSITORY}" \
+            --location="${GAR_LOCATION}" >/dev/null 2>&1 || \
+          gcloud artifacts repositories create "${REPOSITORY}" \
+            --repository-format=docker \
+            --location="${GAR_LOCATION}" \
+            --description="GitHub workflow Docker repository"
+
       # Authenticate Docker to Google Cloud Artifact Registry
       - name: Docker Auth
         uses: 'docker/login-action@v3'
